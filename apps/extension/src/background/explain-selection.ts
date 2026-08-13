@@ -1,10 +1,11 @@
 import { isSupportedPageUrl } from './page-support';
-import {
-  EXPLAIN_SELECTION_ENTRYPOINT,
-  isInjectionReadiness,
-  type InjectionReadiness,
-} from '../shared/injection';
+import { EXPLAIN_SELECTION_ENTRYPOINT } from '../shared/injection';
 import { EXTENSION_NAME } from '../shared/extension-info';
+import {
+  applyContextMenuFallback,
+  isSelectionCaptureResult,
+  type SelectionCaptureResult,
+} from '../shared/selection';
 
 export async function handleExplainSelectionClick(
   info: Browser.contextMenus.OnClickData,
@@ -22,26 +23,41 @@ export async function handleExplainSelectionClick(
   const targetFrameId = info.frameId ?? 0;
 
   try {
-    const results = await browser.scripting.executeScript<[], InjectionReadiness>({
+    const results = await browser.scripting.executeScript<[], SelectionCaptureResult>({
       target: {
         tabId: tab.id,
         frameIds: [targetFrameId],
       },
       files: [EXPLAIN_SELECTION_ENTRYPOINT],
     });
-    const readiness = results[0]?.result;
+    const rawResult = results[0]?.result;
 
-    if (!isInjectionReadiness(readiness)) {
-      console.warn(`${EXTENSION_NAME} content script returned an invalid readiness result`);
+    if (!isSelectionCaptureResult(rawResult)) {
+      console.warn(`${EXTENSION_NAME} content script returned an invalid selection result`);
       return;
     }
 
-    console.info(`${EXTENSION_NAME} content script is ready`, {
+    const result = applyContextMenuFallback(rawResult, info.selectionText);
+
+    if (result.status === 'rejected') {
+      console.warn(`${EXTENSION_NAME} selection was rejected`, {
+        reason: result.reason,
+        message: result.message,
+      });
+      return;
+    }
+
+    console.info(`${EXTENSION_NAME} captured a selection snapshot`, {
       tabId: tab.id,
       frameId: targetFrameId,
-      contextMenuSelectionLength: info.selectionText?.length ?? 0,
-      readiness,
+      source: result.source,
+      selectedTextLength: result.snapshot.selectedText.length,
+      hostname: result.snapshot.page.hostname,
     });
+
+    if (import.meta.env.DEV) {
+      console.debug(`${EXTENSION_NAME} development selection snapshot`, result.snapshot);
+    }
   } catch (error: unknown) {
     console.warn(`${EXTENSION_NAME} could not inject into this page`, error);
   }

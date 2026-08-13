@@ -57,14 +57,22 @@ The development extension is generated in `apps/extension/.output/chrome-mv3-dev
 
 ## Current extension behavior
 
-Slice 2 provides an infrastructure-only **Explain selection** action:
+The current **Explain selection** action captures a local selection snapshot:
 
 1. Select text on a normal HTTP(S) page.
 2. Right-click the selection.
 3. Choose **Explain selection**.
-4. Inspect the extension service worker console to see the structured content-script readiness result.
+4. Inspect the extension service worker console to see the snapshot summary and development payload.
 
-The diagnostic records selection lengths but never logs the selected text. A visible explanation interface is introduced in a later slice.
+Development builds log the full local snapshot—including selected text and nearby context—to make extraction behavior inspectable. Production builds log only a summary. No network request is made. A visible explanation interface is introduced in a later slice.
+
+Current capture limits:
+
+- Selected text: 5,000 characters
+- Each surrounding context block: 2,000 characters
+- Page title: 500 characters
+- URL query parameters, fragments, and credentials are removed
+- Editable fields are unsupported
 
 ## Documentation
 

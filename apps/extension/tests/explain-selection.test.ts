@@ -19,10 +19,18 @@ describe('handleExplainSelectionClick', () => {
       {
         frameId: 7,
         result: {
-          status: 'ready',
-          pageOrigin: 'https://example.com',
-          selectionDetected: true,
-          selectionLength: 12,
+          status: 'captured',
+          source: 'dom',
+          snapshot: {
+            selectedText: 'selected text',
+            context: { containingBlock: 'A paragraph with selected text.' },
+            page: {
+              title: 'Article',
+              url: 'https://example.com/article',
+              hostname: 'example.com',
+              language: 'en',
+            },
+          },
         },
       },
     ]);
@@ -44,6 +52,42 @@ describe('handleExplainSelectionClick', () => {
       target: { tabId: 42, frameIds: [7] },
       files: [EXPLAIN_SELECTION_ENTRYPOINT],
     });
+  });
+
+  it('uses context-menu text when the DOM selection is no longer available', async () => {
+    const executeScript = vi.fn().mockResolvedValue([
+      {
+        frameId: 0,
+        result: {
+          status: 'rejected',
+          reason: 'empty-selection',
+          message: 'Select some text before asking for an explanation.',
+          page: {
+            title: 'Article',
+            url: 'https://example.com/article',
+            hostname: 'example.com',
+          },
+        },
+      },
+    ]);
+    vi.stubGlobal('browser', { scripting: { executeScript } });
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    vi.spyOn(console, 'debug').mockImplementation(() => undefined);
+
+    await handleExplainSelectionClick(
+      {
+        editable: false,
+        menuItemId: 'explain-selection',
+        pageUrl: 'https://example.com/article',
+        selectionText: '  selected   text  ',
+      },
+      SUPPORTED_TAB,
+    );
+
+    expect(info).toHaveBeenCalledWith(
+      expect.stringContaining('captured a selection snapshot'),
+      expect.objectContaining({ source: 'context-menu-fallback', selectedTextLength: 13 }),
+    );
   });
 
   it('declines unsupported pages without attempting injection', async () => {

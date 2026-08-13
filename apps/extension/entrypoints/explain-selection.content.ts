@@ -1,16 +1,14 @@
-import type { InjectionReadiness } from '../src/shared/injection';
+import { captureSelectionSnapshot } from '../src/content/selection-snapshot';
+import type { SelectionCaptureResult } from '../src/shared/selection';
 
 export default defineContentScript({
   registration: 'runtime',
-  main(): InjectionReadiness {
-    const selection = window.getSelection();
-    const selectionLength = selection?.toString().length ?? 0;
-
-    return {
-      status: 'ready',
-      pageOrigin: window.location.origin,
-      selectionDetected: selectionLength > 0 && selection?.isCollapsed === false,
-      selectionLength,
-    };
+  main(): SelectionCaptureResult {
+    return captureSelectionSnapshot({
+      document,
+      selection: window.getSelection(),
+      pageUrl: window.location.href,
+      browserLanguage: navigator.language,
+    });
   },
 });
