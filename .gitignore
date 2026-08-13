@@ -2,5 +2,5 @@ node_modules/
 .output/
 .wxt/
 coverage/
+dist/
 .DS_Store
-

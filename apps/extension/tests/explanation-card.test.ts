@@ -9,7 +9,7 @@ import {
   getSelectionSurfaceTone,
   mountExplanationCard,
 } from '../src/content/explanation-card';
-import type { ExplanationProvider } from '../src/content/mock-explanation';
+import type { ExplanationProvider } from '../src/content/explanation-provider';
 import type { SelectionSnapshot } from '../src/shared/selection';
 
 describe('mountExplanationCard', () => {

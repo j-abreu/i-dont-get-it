@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Browser extension for contextual explanations of selected text.",
+  "dependencies": {
+    "@i-dont-get-it/contracts": "workspace:*"
+  },
   "scripts": {
     "dev": "wxt",
     "build": "wxt build",

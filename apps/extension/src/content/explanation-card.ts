@@ -1,4 +1,4 @@
-import type { ExplanationProvider } from './mock-explanation';
+import type { ExplanationProvider } from './explanation-provider';
 import type { SelectionSnapshot } from '../shared/selection';
 
 export const EXPLANATION_CARD_HOST_ID = 'i-dont-get-it-explanation-card';

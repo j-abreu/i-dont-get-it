@@ -3,7 +3,7 @@ import {
   getSelectionSurfaceTone,
   mountExplanationCard,
 } from '../src/content/explanation-card';
-import { generateMockExplanation } from '../src/content/mock-explanation';
+import { generateApiExplanation } from '../src/content/api-explanation';
 import { captureSelectionSnapshot } from '../src/content/selection-snapshot';
 import type { SelectionCaptureResult } from '../src/shared/selection';
 
@@ -26,7 +26,7 @@ export default defineContentScript({
         snapshot: result.snapshot,
         anchorRect,
         surfaceTone,
-        explain: generateMockExplanation,
+        explain: generateApiExplanation,
       });
     }
 

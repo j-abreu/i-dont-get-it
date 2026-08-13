@@ -6,17 +6,17 @@ The initial product targets Chromium browsers and regular web pages. A user sele
 
 ## Status
 
-The project is implementing its first vertical slice. The current build is a minimal Manifest V3 extension foundation; selection and explanation behavior have not been added yet. The API is planned but has not been scaffolded.
+The first browser vertical slice is complete. The current development slice routes explanation requests through the extension service worker to a local Fastify API. The API returns a deterministic response for now; live model integration is the next slice.
 
 ## Repository structure
 
 ```text
 apps/
 ├── extension/  WXT browser extension
-└── api/        Reserved for the future backend
+└── api/        Fastify explanation gateway
+packages/
+└── contracts/  Shared versioned request and response validation
 ```
-
-Shared packages, including request and response contracts, will be introduced under `packages/` only when they are needed.
 
 ## Requirements
 
@@ -36,6 +36,12 @@ Start WXT's development mode:
 
 ```sh
 pnpm dev
+```
+
+In a second terminal, start the local explanation API:
+
+```sh
+pnpm dev:api
 ```
 
 The root command starts the extension development server. It watches the extension source and produces a development build. Load it manually:
@@ -65,7 +71,7 @@ The development extension is generated in `apps/extension/.output/chrome-mv3-dev
 
 ## Current extension behavior
 
-The current **Explain selection** action captures a local selection snapshot and displays a mocked explanation:
+The current **Explain selection** action captures a local selection snapshot and displays a deterministic explanation returned by the local API:
 
 1. Select text on a normal HTTP(S) page.
 2. Right-click the selection.
@@ -74,7 +80,9 @@ The current **Explain selection** action captures a local selection snapshot and
 
 The prototype card supports loading, close, error, and retry states and includes a collapsible view of the context used. It is isolated from page styling with Shadow DOM. Repeating the action replaces the existing card, and `Escape` closes it.
 
-Development builds also log the full local snapshot—including selected text and nearby context—to make extraction behavior inspectable. Production builds log only a summary. No network request is made; the displayed explanation is deterministic mock content.
+Development builds also log the full local snapshot—including selected text and nearby context—to make extraction behavior inspectable. Production builds log only a summary. The selection snapshot is sent to `http://127.0.0.1:8787/explain` by the extension service worker. The API currently uses a deterministic provider and requires no API key.
+
+If the API is stopped or unavailable, the card displays its existing error state and **Try again** control.
 
 Current capture limits:
 

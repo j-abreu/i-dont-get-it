@@ -8,5 +8,6 @@ export default defineConfig({
     name: EXTENSION_NAME,
     description: EXTENSION_DESCRIPTION,
     permissions: ['activeTab', 'contextMenus', 'scripting'],
+    host_permissions: ['http://127.0.0.1:8787/*'],
   },
 });

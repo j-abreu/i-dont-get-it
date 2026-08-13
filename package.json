@@ -9,10 +9,10 @@
   },
   "scripts": {
     "dev": "pnpm dev:extension",
+    "dev:api": "pnpm --filter @i-dont-get-it/api dev",
     "dev:extension": "pnpm --filter @i-dont-get-it/extension dev",
     "build": "pnpm -r --if-present run build",
     "typecheck": "pnpm -r --if-present run typecheck",
     "test": "pnpm -r --if-present run test"
   }
 }
-
