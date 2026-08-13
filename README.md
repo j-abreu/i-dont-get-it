@@ -96,11 +96,7 @@ Current capture limits:
 
 ## Documentation
 
-Development and usage files live in this repository. Product planning, scope, project tracking, and decision records live in the Obsidian vault at:
-
-`/Users/jeremias/Documents/Obsidian Vault/Projects/i-dont-get-it`
-
-Start with `Project home.md` in that folder.
+Development and usage documentation lives in this repository, primarily in this README and the application-specific READMEs. Internal product planning and decision records are maintained separately and are not part of the public repository.
 
 ## Initial product boundary
 
