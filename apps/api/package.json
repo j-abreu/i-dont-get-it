@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@i-dont-get-it/contracts": "workspace:*",
-    "fastify": "5.6.2"
+    "fastify": "5.6.2",
+    "openai": "7.4.0"
   },
   "devDependencies": {
     "@types/node": "24.13.3",

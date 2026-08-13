@@ -6,7 +6,7 @@ The initial product targets Chromium browsers and regular web pages. A user sele
 
 ## Status
 
-The first browser vertical slice is complete. The current development slice routes explanation requests through the extension service worker to a local Fastify API. The API returns a deterministic response for now; live model integration is the next slice.
+The first browser vertical slice and local API boundary are complete. The API supports deterministic local responses and live model explanations through a server-side OpenAI Responses API adapter.
 
 ## Repository structure
 
@@ -44,6 +44,8 @@ In a second terminal, start the local explanation API:
 pnpm dev:api
 ```
 
+The deterministic provider requires no credentials. For live explanations, copy `apps/api/.env.example` to `apps/api/.env`, set `EXPLANATION_PROVIDER=openai`, and provide `OPENAI_API_KEY`. The initial recommended model is `gpt-5-nano`. Credentials remain in the API process and are never bundled into the extension.
+
 The root command starts the extension development server. It watches the extension source and produces a development build. Load it manually:
 
 1. Open `chrome://extensions`.
@@ -80,7 +82,7 @@ The current **Explain selection** action captures a local selection snapshot and
 
 The prototype card supports loading, close, error, and retry states and includes a collapsible view of the context used. It is isolated from page styling with Shadow DOM. Repeating the action replaces the existing card, and `Escape` closes it.
 
-Development builds also log the full local snapshot—including selected text and nearby context—to make extraction behavior inspectable. Production builds log only a summary. The selection snapshot is sent to `http://127.0.0.1:8787/explain` by the extension service worker. The API currently uses a deterministic provider and requires no API key.
+Development builds also log the full local snapshot—including selected text and nearby context—to make extraction behavior inspectable. Production builds log only a summary. The selection snapshot is sent to `http://127.0.0.1:8787/explain` by the extension service worker. The API uses the provider configured in `apps/api/.env`; deterministic mode remains the default.
 
 If the API is stopped or unavailable, the card displays its existing error state and **Try again** control.
 

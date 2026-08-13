@@ -7,9 +7,10 @@ import {
 import Fastify from 'fastify';
 
 import {
-  deterministicExplanationProvider,
+  ExplanationProviderError,
   type ExplanationProvider,
 } from './provider.js';
+import { deterministicExplanationProvider } from './provider.js';
 
 const REQUEST_BODY_LIMIT_BYTES = 32 * 1024;
 
@@ -48,19 +49,35 @@ export function buildApp(options: BuildAppOptions = {}) {
         explanation,
       };
       return reply.code(200).send(response);
-    } catch {
+    } catch (error: unknown) {
+      const providerError =
+        error instanceof ExplanationProviderError
+          ? error
+          : new ExplanationProviderError('internal_error', false);
       const response: ExplainErrorResponse = {
         version: EXPLANATION_CONTRACT_VERSION,
         requestId: request.id,
         error: {
-          code: 'service_unavailable',
-          message: 'The explanation service is temporarily unavailable.',
-          retryable: true,
+          code: providerError.code,
+          message: getPublicErrorMessage(providerError.code),
+          retryable: providerError.retryable,
         },
       };
-      return reply.code(503).send(response);
+      return reply.code(providerError.code === 'internal_error' ? 500 : 503).send(response);
     }
   });
 
   return app;
+}
+
+function getPublicErrorMessage(code: ExplanationProviderError['code']): string {
+  if (code === 'timeout') {
+    return 'The explanation request timed out.';
+  }
+
+  if (code === 'service_unavailable') {
+    return 'The explanation service is temporarily unavailable.';
+  }
+
+  return 'The explanation could not be generated.';
 }

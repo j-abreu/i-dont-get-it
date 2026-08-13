@@ -31,11 +31,13 @@ describe('mountExplanationCard', () => {
     const shadow = controller.host.shadowRoot!;
 
     expect(shadow.querySelector('[role="status"]')?.textContent).toContain('Preparing');
+    expect(shadow.querySelector('.brand')?.textContent).toBe("I don't get it");
     expect(document.querySelector('.card')).toBeNull();
 
     await controller.settled;
 
     expect(shadow.querySelector('.explanation')?.textContent).toBe('A contextual explanation.');
+    expect(shadow.querySelector('.brand')?.textContent).toBe('Now you get it!');
     expect(shadow.querySelector('blockquote')?.textContent).toContain('contextual representation');
     expect(shadow.querySelector('details')?.textContent).toContain('How models learn');
   });

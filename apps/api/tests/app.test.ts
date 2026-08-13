@@ -2,7 +2,7 @@ import { EXPLANATION_CONTRACT_VERSION, type ExplainRequest } from '@i-dont-get-i
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { buildApp } from '../src/app.js';
-import type { ExplanationProvider } from '../src/provider.js';
+import { ExplanationProviderError, type ExplanationProvider } from '../src/provider.js';
 
 const apps: ReturnType<typeof buildApp>[] = [];
 
@@ -46,10 +46,14 @@ describe('API', () => {
     expect(provider.explain).not.toHaveBeenCalled();
   });
 
-  it('maps provider failures to a safe retryable response', async () => {
+  it('maps provider failures to a safe public response', async () => {
     const app = track(
       buildApp({
-        provider: { explain: vi.fn().mockRejectedValue(new Error('provider secret')) },
+        provider: {
+          explain: vi
+            .fn()
+            .mockRejectedValue(new ExplanationProviderError('service_unavailable', true)),
+        },
       }),
     );
     const response = await app.inject({ method: 'POST', url: '/explain', payload: createRequest() });

@@ -2,7 +2,19 @@
 
 The local API validates explanation requests and keeps model-provider credentials outside the browser extension.
 
-Slice 1 uses a deterministic provider so the complete extension-to-server boundary can be tested without an API key. A later slice will add the live provider adapter behind the same interface.
+The API supports a deterministic provider for key-free development and an OpenAI Responses API provider for live explanations. Both use the same extension-facing contract.
+
+Copy `.env.example` to `.env`. Keep `EXPLANATION_PROVIDER=deterministic` for local boundary testing, or configure live explanations:
+
+```dotenv
+EXPLANATION_PROVIDER=openai
+OPENAI_API_KEY=your_server_side_key
+OPENAI_MODEL=gpt-5-nano
+```
+
+`.env` is ignored by Git. The API fails at startup if the OpenAI provider is selected without both required values. No default model is hard-coded; choose a model enabled for your OpenAI project.
+
+The initial model choice is `gpt-5-nano`. Live explanation requests use its lowest supported reasoning effort, `minimal`, to favor interactive response time for this focused task. Newer compatible models use `none` where supported.
 
 Start it from the repository root with:
 

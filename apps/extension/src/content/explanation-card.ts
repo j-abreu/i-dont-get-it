@@ -238,7 +238,7 @@ function renderSuccess(
   explanation: string,
   close: () => void,
 ): void {
-  renderShell(card, snapshot, close);
+  renderShell(card, snapshot, close, 'Now you get it!');
 
   const label = card.ownerDocument.createElement('p');
   label.className = 'eyebrow';
@@ -285,13 +285,18 @@ function renderError(
   retryButton.focus({ preventScroll: true });
 }
 
-function renderShell(card: HTMLElement, snapshot: SelectionSnapshot, close: () => void): void {
+function renderShell(
+  card: HTMLElement,
+  snapshot: SelectionSnapshot,
+  close: () => void,
+  brandText = "I don't get it",
+): void {
   card.replaceChildren();
 
   const header = card.ownerDocument.createElement('header');
   const brand = card.ownerDocument.createElement('span');
   brand.className = 'brand';
-  brand.textContent = "I don't get it";
+  brand.textContent = brandText;
 
   const closeButton = card.ownerDocument.createElement('button');
   closeButton.className = 'close';
