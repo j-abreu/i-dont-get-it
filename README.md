@@ -57,14 +57,16 @@ The development extension is generated in `apps/extension/.output/chrome-mv3-dev
 
 ## Current extension behavior
 
-The current **Explain selection** action captures a local selection snapshot:
+The current **Explain selection** action captures a local selection snapshot and displays a mocked explanation:
 
 1. Select text on a normal HTTP(S) page.
 2. Right-click the selection.
 3. Choose **Explain selection**.
-4. Inspect the extension service worker console to see the snapshot summary and development payload.
+4. A floating explanation card appears near the selection.
 
-Development builds log the full local snapshot—including selected text and nearby context—to make extraction behavior inspectable. Production builds log only a summary. No network request is made. A visible explanation interface is introduced in a later slice.
+The prototype card supports loading, close, error, and retry states and includes a collapsible view of the context used. It is isolated from page styling with Shadow DOM. Repeating the action replaces the existing card, and `Escape` closes it.
+
+Development builds also log the full local snapshot—including selected text and nearby context—to make extraction behavior inspectable. Production builds log only a summary. No network request is made; the displayed explanation is deterministic mock content.
 
 Current capture limits:
 
