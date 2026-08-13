@@ -9,7 +9,8 @@ import {
   type SelectionContext,
 } from '../shared/selection';
 
-const CONTENT_BLOCK_SELECTOR = 'p, li, blockquote, pre, td, th, dd, dt, h1, h2, h3, h4, h5, h6';
+const CONTENT_BLOCK_SELECTOR =
+  'p, li, blockquote, pre, td, th, dd, dt, h1, h2, h3, h4, h5, h6, [contenteditable]:not([contenteditable="false"])';
 const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6';
 const DOCUMENT_POSITION_FOLLOWING = 4;
 const NON_PROSE_CONTAINER_SELECTOR =
@@ -26,9 +27,14 @@ type CaptureOptions = {
 export function captureSelectionSnapshot(options: CaptureOptions): SelectionCaptureResult {
   const page = extractPageMetadata(options);
   const { document, selection } = options;
+  const textControl = findSelectedTextControl(document, selection);
 
-  if (isEditableSelection(document, selection)) {
-    return createRejection('editable-selection', page);
+  if (textControl !== null) {
+    if (textControl instanceof HTMLInputElement && textControl.type === 'password') {
+      return createRejection('editable-selection', page);
+    }
+
+    return captureTextControlSelection(document, textControl, page);
   }
 
   const selectedText = normalizeReadableText(selection?.toString() ?? '');
@@ -59,6 +65,46 @@ export function captureSelectionSnapshot(options: CaptureOptions): SelectionCapt
     snapshot: {
       selectedText,
       context: extractSelectionContext(document, range, selectedText),
+      page,
+    },
+  };
+}
+
+function captureTextControlSelection(
+  document: Document,
+  control: HTMLInputElement | HTMLTextAreaElement,
+  page: PageMetadata,
+): SelectionCaptureResult {
+  const start = control.selectionStart;
+  const end = control.selectionEnd;
+
+  if (start === null || end === null || start === end) {
+    return createRejection('empty-selection', page);
+  }
+
+  const selectedText = normalizeReadableText(
+    control.value.slice(Math.min(start, end), Math.max(start, end)),
+  );
+
+  if (selectedText.length === 0) {
+    return createRejection('empty-selection', page);
+  }
+
+  if (selectedText.length > MAX_SELECTION_CHARACTERS) {
+    return createRejection('selection-too-long', page);
+  }
+
+  const heading = findNearestHeading(document, control);
+
+  return {
+    status: 'captured',
+    source: 'editable',
+    snapshot: {
+      selectedText,
+      context: {
+        ...(heading === undefined ? {} : { heading }),
+        containingBlock: truncateContextText(control.value),
+      },
       page,
     },
   };
@@ -226,28 +272,38 @@ function joinUniqueBlocks(values: string[]): string {
   return unique.join('\n\n');
 }
 
-function isEditableSelection(document: Document, selection: Selection | null): boolean {
+function findSelectedTextControl(
+  document: Document,
+  selection: Selection | null,
+): HTMLInputElement | HTMLTextAreaElement | null {
   const selectedNodes = [selection?.anchorNode, selection?.focusNode].filter(
     (node): node is Node => node !== null && node !== undefined,
   );
+  const hasDomSelection = normalizeReadableText(selection?.toString() ?? '').length > 0;
+  const candidates = [
+    ...selectedNodes,
+    ...(hasDomSelection ? [] : [document.activeElement]),
+  ].filter(
+    (node): node is Node => node !== null,
+  );
 
-  if (selectedNodes.some(isInsideEditableElement)) {
-    return true;
+  for (const node of candidates) {
+    const element = node.nodeType === 1 ? (node as Element) : node.parentElement;
+    const control = element?.closest('input, textarea');
+
+    if (
+      control instanceof HTMLTextAreaElement ||
+      (control instanceof HTMLInputElement && isSelectableTextInput(control))
+    ) {
+      return control;
+    }
   }
 
-  return selectedNodes.length === 0 && isInsideEditableElement(document.activeElement);
+  return null;
 }
 
-function isInsideEditableElement(node: Node | null): boolean {
-  if (node === null) {
-    return false;
-  }
-
-  const element = node.nodeType === 1 ? (node as Element) : node.parentElement;
-
-  return Boolean(
-    element?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])'),
-  );
+function isSelectableTextInput(input: HTMLInputElement): boolean {
+  return ['text', 'search', 'url', 'tel', 'email', 'password'].includes(input.type);
 }
 
 function isHidden(element: Element): boolean {

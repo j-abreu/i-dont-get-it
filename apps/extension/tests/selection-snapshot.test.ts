@@ -177,9 +177,53 @@ describe('captureSelectionSnapshot', () => {
     }
   });
 
-  it('rejects editable and oversized selections', () => {
-    document.body.innerHTML = `<div contenteditable="true" id="editor">editable text</div>`;
+  it('captures a contenteditable selection as DOM content', () => {
+    document.body.innerHTML = `
+      <h2>Draft notes</h2>
+      <div contenteditable="true" id="editor">An editable contextual phrase.</div>
+    `;
     selectText(document.querySelector('#editor')!.firstChild!);
+
+    expect(captureSelectionSnapshot(createOptions())).toMatchObject({
+      status: 'captured',
+      source: 'dom',
+      snapshot: {
+        selectedText: 'An editable contextual phrase.',
+        context: {
+          heading: 'Draft notes',
+          containingBlock: 'An editable contextual phrase.',
+        },
+      },
+    });
+  });
+
+  it('captures a textarea selection with the field value as context', () => {
+    document.body.innerHTML = `
+      <h2>Editable sample</h2>
+      <textarea id="editor">Text selected here should be explainable because it is editable.</textarea>
+    `;
+    const editor = document.querySelector<HTMLTextAreaElement>('#editor')!;
+    editor.focus();
+    editor.setSelectionRange(5, 18);
+
+    expect(captureSelectionSnapshot(createOptions())).toMatchObject({
+      status: 'captured',
+      source: 'editable',
+      snapshot: {
+        selectedText: 'selected here',
+        context: {
+          heading: 'Editable sample',
+          containingBlock: 'Text selected here should be explainable because it is editable.',
+        },
+      },
+    });
+  });
+
+  it('still rejects password and oversized selections', () => {
+    document.body.innerHTML = `<input id="password" type="password" value="private secret">`;
+    const password = document.querySelector<HTMLInputElement>('#password')!;
+    password.focus();
+    password.setSelectionRange(0, password.value.length);
 
     expect(captureSelectionSnapshot(createOptions())).toMatchObject({
       status: 'rejected',

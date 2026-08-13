@@ -26,6 +26,7 @@ type MountExplanationCardOptions = {
   document: Document;
   snapshot: SelectionSnapshot;
   anchorRect?: AnchorRect;
+  surfaceTone?: 'light' | 'dark';
   explain: ExplanationProvider;
 };
 
@@ -58,7 +59,7 @@ export function mountExplanationCard(
   shadowRoot.append(createStyles(options.document));
 
   const card = options.document.createElement('section');
-  card.className = 'card';
+  card.className = options.surfaceTone === 'dark' ? 'card card--over-dark' : 'card';
   card.setAttribute('role', 'dialog');
   card.setAttribute('aria-label', 'Explanation');
   card.setAttribute('aria-live', 'polite');
@@ -104,7 +105,16 @@ export function mountExplanationCard(
   return { host, close, settled };
 }
 
-export function getSelectionAnchorRect(selection: Selection | null): AnchorRect | undefined {
+export function getSelectionAnchorRect(
+  selection: Selection | null,
+  document?: Document,
+): AnchorRect | undefined {
+  const textControl = getActiveTextControl(document, selection);
+
+  if (textControl !== null) {
+    return copyRect(textControl.getBoundingClientRect());
+  }
+
   if (selection === null || selection.rangeCount === 0) {
     return undefined;
   }
@@ -117,17 +127,36 @@ export function getSelectionAnchorRect(selection: Selection | null): AnchorRect 
       return undefined;
     }
 
-    return {
-      top: rect.top,
-      right: rect.right,
-      bottom: rect.bottom,
-      left: rect.left,
-      width: rect.width,
-      height: rect.height,
-    };
+    return copyRect(rect);
   } catch {
     return undefined;
   }
+}
+
+export function getSelectionSurfaceTone(
+  document: Document,
+  selection: Selection | null,
+): 'light' | 'dark' {
+  const view = document.defaultView;
+  const selectedNode = selection?.anchorNode;
+  let element: Element | null =
+    getActiveTextControl(document, selection) ??
+    (selectedNode?.nodeType === 1 ? (selectedNode as Element) : selectedNode?.parentElement) ??
+    document.body;
+
+  while (view !== null && element !== null) {
+    const color = parseCssColor(view.getComputedStyle(element).backgroundColor);
+
+    if (color !== null && color.alpha >= 0.2) {
+      const luminance =
+        (0.2126 * color.red + 0.7152 * color.green + 0.0722 * color.blue) / 255;
+      return luminance < 0.45 ? 'dark' : 'light';
+    }
+
+    element = element.parentElement;
+  }
+
+  return 'light';
 }
 
 export function calculateCardPosition(
@@ -371,6 +400,19 @@ function createStyles(document: Document): HTMLStyleElement {
       position: absolute;
       z-index: -1;
     }
+    .card--over-dark {
+      border-color: rgba(255, 255, 255, 0.82);
+      background-color: rgba(255, 255, 255, 0.44);
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.48) 46%, rgba(255, 255, 255, 0.36));
+      -webkit-backdrop-filter: blur(18px) saturate(112%) brightness(118%);
+      backdrop-filter: blur(18px) saturate(112%) brightness(118%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.92),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.38),
+        0 22px 60px rgba(0, 0, 0, 0.3),
+        0 4px 16px rgba(0, 0, 0, 0.2);
+    }
     .card:focus-visible { outline: 2px solid rgba(25, 28, 34, 0.46); outline-offset: 2px; }
     header { align-items: center; display: flex; justify-content: space-between; margin: 0 0 12px; }
     .brand { color: #1a1d22; font-size: 13px; font-weight: 700; letter-spacing: 0.02em; }
@@ -405,4 +447,57 @@ function createStyles(document: Document): HTMLStyleElement {
     }
   `;
   return style;
+}
+
+function getActiveTextControl(
+  document: Document | undefined,
+  selection: Selection | null,
+): HTMLElement | null {
+  if ((selection?.toString() ?? '').trim().length > 0) {
+    return null;
+  }
+
+  const activeElement = document?.activeElement;
+  return activeElement?.matches(
+    'textarea, input:is([type="text"], [type="search"], [type="url"], [type="tel"], [type="email"], :not([type]))',
+  )
+    ? (activeElement as HTMLElement)
+    : null;
+}
+
+function copyRect(rect: DOMRect): AnchorRect | undefined {
+  if (rect.width === 0 && rect.height === 0) {
+    return undefined;
+  }
+
+  return {
+    top: rect.top,
+    right: rect.right,
+    bottom: rect.bottom,
+    left: rect.left,
+    width: rect.width,
+    height: rect.height,
+  };
+}
+
+function parseCssColor(value: string): {
+  red: number;
+  green: number;
+  blue: number;
+  alpha: number;
+} | null {
+  const match = value.match(
+    /^rgba?\(\s*([\d.]+)[, ]+\s*([\d.]+)[, ]+\s*([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)$/,
+  );
+
+  if (match === null) {
+    return null;
+  }
+
+  return {
+    red: Number(match[1]),
+    green: Number(match[2]),
+    blue: Number(match[3]),
+    alpha: match[4] === undefined ? 1 : Number(match[4]),
+  };
 }

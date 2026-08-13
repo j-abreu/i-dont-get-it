@@ -1,5 +1,6 @@
 import {
   getSelectionAnchorRect,
+  getSelectionSurfaceTone,
   mountExplanationCard,
 } from '../src/content/explanation-card';
 import { generateMockExplanation } from '../src/content/mock-explanation';
@@ -10,7 +11,8 @@ export default defineContentScript({
   registration: 'runtime',
   main(): SelectionCaptureResult {
     const selection = window.getSelection();
-    const anchorRect = getSelectionAnchorRect(selection);
+    const anchorRect = getSelectionAnchorRect(selection, document);
+    const surfaceTone = getSelectionSurfaceTone(document, selection);
     const result = captureSelectionSnapshot({
       document,
       selection,
@@ -23,6 +25,7 @@ export default defineContentScript({
         document,
         snapshot: result.snapshot,
         anchorRect,
+        surfaceTone,
         explain: generateMockExplanation,
       });
     }

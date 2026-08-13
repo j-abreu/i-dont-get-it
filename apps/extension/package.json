@@ -10,7 +10,8 @@
     "prepare": "wxt prepare",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:fixture": "node tests/fixtures/server.mjs"
   },
   "devDependencies": {
     "happy-dom": "20.11.2",

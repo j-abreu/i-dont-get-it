@@ -31,7 +31,7 @@ export type SelectionRejectionReason =
 export type SelectionCaptureResult =
   | {
       status: 'captured';
-      source: 'dom' | 'context-menu-fallback';
+      source: 'dom' | 'editable' | 'context-menu-fallback';
       snapshot: SelectionSnapshot;
     }
   | {
@@ -42,7 +42,7 @@ export type SelectionCaptureResult =
     };
 
 const REJECTION_MESSAGES: Record<SelectionRejectionReason, string> = {
-  'editable-selection': 'Text selected in an editable field is not supported.',
+  'editable-selection': 'Text selected in a sensitive editable field cannot be explained.',
   'empty-selection': 'Select some text before asking for an explanation.',
   'selection-too-long': `Selections can contain at most ${MAX_SELECTION_CHARACTERS.toLocaleString()} characters.`,
   'selection-unavailable': 'The selected text is no longer available on this page.',
@@ -123,7 +123,9 @@ export function isSelectionCaptureResult(value: unknown): value is SelectionCapt
 
   if (candidate.status === 'captured') {
     return (
-      (candidate.source === 'dom' || candidate.source === 'context-menu-fallback') &&
+      (candidate.source === 'dom' ||
+        candidate.source === 'editable' ||
+        candidate.source === 'context-menu-fallback') &&
       isSelectionSnapshot(candidate.snapshot)
     );
   }

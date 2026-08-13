@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   calculateCardPosition,
   EXPLANATION_CARD_HOST_ID,
+  getSelectionAnchorRect,
+  getSelectionSurfaceTone,
   mountExplanationCard,
 } from '../src/content/explanation-card';
 import type { ExplanationProvider } from '../src/content/mock-explanation';
@@ -98,6 +100,50 @@ describe('mountExplanationCard', () => {
     });
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     expect(second.host.isConnected).toBe(false);
+  });
+
+  it('uses a stronger glass surface over a dark selection background', () => {
+    const controller = mountExplanationCard({
+      document,
+      snapshot: createSnapshot(),
+      surfaceTone: 'dark',
+      explain: pendingExplanation,
+    });
+
+    expect(controller.host.shadowRoot?.querySelector('.card--over-dark')).not.toBeNull();
+  });
+});
+
+describe('selection presentation context', () => {
+  it('anchors textarea selections to the editable control', () => {
+    document.body.innerHTML = '<textarea id="editor">editable selection</textarea>';
+    const editor = document.querySelector<HTMLTextAreaElement>('#editor')!;
+    editor.focus();
+    vi.spyOn(editor, 'getBoundingClientRect').mockReturnValue(
+      createAnchorRect({ top: 200, bottom: 280, height: 80 }) as DOMRect,
+    );
+
+    expect(getSelectionAnchorRect(window.getSelection(), document)).toMatchObject({
+      top: 200,
+      bottom: 280,
+      height: 80,
+    });
+  });
+
+  it('detects a dark ancestor behind the selected text', () => {
+    document.body.innerHTML = `
+      <section style="background-color: rgb(24, 36, 42)">
+        <p id="target">Readable selected text.</p>
+      </section>
+    `;
+    const text = document.querySelector('#target')!.firstChild!;
+    const range = document.createRange();
+    range.selectNodeContents(text);
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    expect(getSelectionSurfaceTone(document, selection)).toBe('dark');
   });
 });
 

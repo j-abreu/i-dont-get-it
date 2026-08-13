@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>i-dont-get-it vertical slice fixture</title>
+    <style>
+      :root { color-scheme: light; font-family: Georgia, serif; }
+      * { box-sizing: border-box; }
+      body { background: #f3efe6; color: #20201e; margin: 0; }
+      header { background: #1f3540; color: #fff; padding: 22px max(24px, calc((100vw - 920px) / 2)); }
+      header p { margin: 5px 0 0; opacity: 0.75; }
+      main { margin: 0 auto; max-width: 920px; padding: 40px 24px 120px; }
+      article { background: rgba(255, 255, 255, 0.75); border-radius: 18px; box-shadow: 0 15px 45px rgba(32, 32, 30, 0.08); padding: 34px; }
+      h1, h2 { font-family: system-ui, sans-serif; }
+      h1 { margin-top: 0; }
+      h2 { border-top: 1px solid #cbc5b9; margin-top: 34px; padding-top: 28px; }
+      p, li { font-size: 18px; line-height: 1.7; }
+      nav { background: #e2ddd2; border-radius: 10px; margin: 24px 0; padding: 12px 16px; }
+      nav a { margin-right: 12px; }
+      .dark-panel { background: #18242a; border-radius: 14px; color: #f1f5f6; padding: 24px; }
+      .edge-case { margin-top: 70vh; }
+      textarea { display: block; min-height: 90px; width: 100%; }
+      button { font: 600 14px system-ui, sans-serif; padding: 8px 12px; }
+      @media (max-width: 520px) { article { border-radius: 0; padding: 20px; } main { padding-inline: 0; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>i-dont-get-it test fixture</strong>
+      <p>Selections on this page are intentionally varied.</p>
+    </header>
+    <main>
+      <article>
+        <h1>How contextual explanations work</h1>
+        <p id="intro-before">Readers infer meaning from the concepts immediately surrounding an unfamiliar phrase.</p>
+        <p id="inline-selection">
+          A language model can build a <em>contextual representation</em> by considering a phrase together with its sentence, section, and document subject.
+        </p>
+        <p id="intro-after">The useful context is local prose, not every item that happens to appear nearby in the document tree.</p>
+
+        <nav aria-label="Related pages">
+          <a href="#dynamic">Dynamic rendering</a>
+          <a href="#dark">Dark backgrounds</a>
+          <a href="#edge">Viewport edges</a>
+        </nav>
+
+        <h2>Selections spanning elements</h2>
+        <p id="multi-start">A selection may begin in one paragraph, include <strong>inline formatting</strong>,</p>
+        <p id="multi-end">and finish in another paragraph without losing the words between them.</p>
+
+        <h2 id="dark">Dark-background readability</h2>
+        <div class="dark-panel">
+          <p id="dark-selection">A translucent explanation card must remain legible while allowing the dark content beneath it to influence the glass.</p>
+        </div>
+
+        <h2 id="dynamic">Dynamic application content</h2>
+        <p id="dynamic-copy">This paragraph will be replaced without a full page navigation.</p>
+        <button id="replace" type="button">Replace dynamic paragraph</button>
+
+        <h2>Editable content</h2>
+        <p>Selections in the field below should open an explanation beside the field.</p>
+        <textarea aria-label="Editable sample">Text selected here should be explainable because it is editable.</textarea>
+
+        <section class="edge-case" id="edge">
+          <h2>Viewport-edge positioning</h2>
+          <p id="edge-selection">This selection sits near the bottom of a long page so the explanation card should remain inside the viewport.</p>
+        </section>
+      </article>
+    </main>
+    <script>
+      document.querySelector('#replace').addEventListener('click', () => {
+        document.querySelector('#dynamic-copy').textContent =
+          'The application replaced this paragraph at runtime, and the new text should still be explainable.';
+      });
+    </script>
+  </body>
+</html>

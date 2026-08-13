@@ -53,6 +53,14 @@ pnpm test
 pnpm build
 ```
 
+Run the deterministic browser test fixture:
+
+```sh
+pnpm --filter @i-dont-get-it/extension test:fixture
+```
+
+Then open `http://127.0.0.1:4173/`. The fixture includes article prose, inline and multi-paragraph selections, link-heavy navigation, a dark panel, dynamic content, editable text, and a viewport-edge case.
+
 The development extension is generated in `apps/extension/.output/chrome-mv3-dev`. The production extension is generated in `apps/extension/.output/chrome-mv3`.
 
 ## Current extension behavior
@@ -74,7 +82,7 @@ Current capture limits:
 - Each surrounding context block: 2,000 characters
 - Page title: 500 characters
 - URL query parameters, fragments, and credentials are removed
-- Editable fields are unsupported
+- Textareas, text inputs, and contenteditable regions are supported; password inputs remain excluded
 
 ## Documentation
 
