@@ -338,52 +338,71 @@ function createStyles(document: Document): HTMLStyleElement {
     :host { color-scheme: light; }
     *, *::before, *::after { box-sizing: border-box; }
     .card {
+      isolation: isolate;
+      position: relative;
       max-height: min(${CARD_MAX_HEIGHT}px, calc(100vh - ${VIEWPORT_MARGIN * 2}px));
       overflow: auto;
-      border: 1px solid rgba(255, 255, 255, 0.68);
-      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.62);
+      border-radius: 18px;
+      background-color: rgba(255, 255, 255, 0.12);
       background:
-        linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(244, 243, 252, 0.68));
-      -webkit-backdrop-filter: blur(18px) saturate(145%);
-      backdrop-filter: blur(18px) saturate(145%);
+        linear-gradient(145deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.16) 46%, rgba(255, 255, 255, 0.08));
+      -webkit-backdrop-filter: blur(14px) saturate(120%) brightness(106%);
+      backdrop-filter: blur(14px) saturate(120%) brightness(106%);
       box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.78),
-        0 18px 48px rgba(28, 25, 48, 0.22),
-        0 3px 10px rgba(28, 25, 48, 0.12);
-      color: #1d2230;
+        inset 0 1px 0 rgba(255, 255, 255, 0.76),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.24),
+        0 22px 56px rgba(20, 24, 32, 0.18),
+        0 4px 14px rgba(20, 24, 32, 0.1);
+      color: #17191d;
       font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       letter-spacing: normal;
       padding: 16px;
       text-align: left;
     }
-    .card:focus-visible { outline: 3px solid #6d5ce8; outline-offset: 2px; }
+    .card::before {
+      background:
+        radial-gradient(140% 90% at 8% 0%, rgba(255, 255, 255, 0.38), transparent 42%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 24%, transparent 76%, rgba(255, 255, 255, 0.08));
+      border-radius: inherit;
+      content: "";
+      inset: 0;
+      pointer-events: none;
+      position: absolute;
+      z-index: -1;
+    }
+    .card:focus-visible { outline: 2px solid rgba(25, 28, 34, 0.46); outline-offset: 2px; }
     header { align-items: center; display: flex; justify-content: space-between; margin: 0 0 12px; }
-    .brand { color: #513bc8; font-size: 13px; font-weight: 700; letter-spacing: 0.02em; }
+    .brand { color: #1a1d22; font-size: 13px; font-weight: 700; letter-spacing: 0.02em; }
     button { font: inherit; }
     .close {
-      align-items: center; background: transparent; border: 0; border-radius: 7px; color: #5e6673;
+      align-items: center; background: transparent; border: 0; border-radius: 9px; color: rgba(23, 25, 29, 0.66);
       cursor: pointer; display: inline-flex; font-size: 24px; height: 30px; justify-content: center;
       line-height: 1; margin: -5px -5px -5px 8px; padding: 0; width: 30px;
     }
-    .close:hover { background: rgba(255, 255, 255, 0.62); color: #202631; }
-    .close:focus-visible, .retry:focus-visible, summary:focus-visible { outline: 3px solid #6d5ce8; outline-offset: 2px; }
+    .close:hover { background: rgba(255, 255, 255, 0.38); color: #111318; }
+    .close:focus-visible, .retry:focus-visible, summary:focus-visible { outline: 3px solid rgba(31, 35, 42, 0.62); outline-offset: 2px; }
     blockquote {
-      border-left: 3px solid rgba(105, 82, 222, 0.42); color: #4a5261; font-size: 13px; margin: 0 0 15px;
+      border-left: 3px solid rgba(28, 31, 37, 0.26); color: rgba(25, 28, 34, 0.72); font-size: 13px; margin: 0 0 15px;
       max-height: 88px; overflow: auto; padding: 2px 0 2px 10px;
     }
-    .eyebrow { color: #727a87; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; margin: 0 0 5px; text-transform: uppercase; }
-    .explanation { font-size: 15px; margin: 0; }
-    .status { align-items: center; color: #5e6673; display: flex; gap: 9px; min-height: 44px; }
-    .spinner { animation: spin 0.8s linear infinite; border: 2px solid #d7d3f5; border-radius: 50%; border-top-color: #654fdc; height: 17px; width: 17px; }
-    .error { background: rgba(255, 235, 231, 0.76); border-radius: 9px; color: #7b2821; padding: 12px; }
+    .eyebrow { color: rgba(27, 30, 36, 0.56); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; margin: 0 0 5px; text-transform: uppercase; }
+    .explanation { color: #14161a; font-size: 15px; margin: 0; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.28); }
+    .status { align-items: center; color: rgba(25, 28, 34, 0.7); display: flex; gap: 9px; min-height: 44px; }
+    .spinner { animation: spin 0.8s linear infinite; border: 2px solid rgba(20, 23, 28, 0.16); border-radius: 50%; border-top-color: #181b20; height: 17px; width: 17px; }
+    .error { background: rgba(255, 230, 226, 0.46); border: 1px solid rgba(126, 34, 27, 0.16); border-radius: 10px; color: #6e211a; padding: 12px; }
     .error p { margin: 0 0 10px; }
-    .retry { background: #5a45d6; border: 0; border-radius: 8px; color: #fff; cursor: pointer; font-weight: 650; padding: 7px 11px; }
-    .retry:hover { background: #4935be; }
-    .context { border-top: 1px solid rgba(91, 84, 122, 0.16); color: #555d6b; font-size: 12px; margin-top: 16px; padding-top: 11px; }
+    .retry { background: rgba(24, 27, 32, 0.86); border: 1px solid rgba(255, 255, 255, 0.34); border-radius: 9px; color: #ffffff; cursor: pointer; font-weight: 650; padding: 7px 11px; }
+    .retry:hover { background: #15181d; }
+    .context { border-top: 1px solid rgba(27, 30, 36, 0.16); color: rgba(25, 28, 34, 0.66); font-size: 12px; margin-top: 16px; padding-top: 11px; }
     .context summary { border-radius: 4px; cursor: pointer; font-weight: 650; }
     .context p { margin: 9px 0 0; white-space: pre-line; }
     @keyframes spin { to { transform: rotate(360deg); } }
     @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+    @media (prefers-contrast: more) {
+      .card { background: rgba(255, 255, 255, 0.92); border-color: rgba(20, 23, 28, 0.5); }
+      blockquote, .context, .eyebrow, .status { color: #000000; }
+    }
   `;
   return style;
 }
