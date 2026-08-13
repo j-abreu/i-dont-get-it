@@ -1,0 +1,18 @@
+{
+  "name": "i-dont-get-it-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Workspace for the i-dont-get-it browser extension and API.",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm dev:extension",
+    "dev:extension": "pnpm --filter @i-dont-get-it/extension dev",
+    "build": "pnpm -r --if-present run build",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "test": "pnpm -r --if-present run test"
+  }
+}
+
