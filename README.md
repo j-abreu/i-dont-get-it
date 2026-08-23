@@ -1,12 +1,16 @@
 # i-dont-get-it
 
+<p align="center">
+  <img src="apps/extension/public/icon/128.png" alt="i-dont-get-it teacher robot icon" width="128">
+</p>
+
 A browser extension and supporting API that explain selected text using the context of the page the user is reading.
 
 The initial product targets Chromium browsers and regular web pages. A user selects a term, sentence, or paragraph, invokes the extension, and receives a contextual explanation without leaving the page.
 
 ## Status
 
-The first browser vertical slice and local API boundary are complete. The Fastify API supports deterministic local responses and live model explanations through a server-side OpenAI Responses API adapter. A separate Cloudflare Worker production target is now available for Workers AI evaluation.
+The first browser vertical slice and API boundary are complete. The Fastify API supports deterministic local responses and live model explanations through a server-side OpenAI Responses API adapter. Production extension builds use the deployed Cloudflare Worker and Workers AI.
 
 ## Repository structure
 
@@ -85,7 +89,7 @@ The deployed Worker still needs an installation-credential flow before unrestric
 
 ## Current extension behavior
 
-The current **I don't get it!** action captures a local selection snapshot and displays a deterministic explanation returned by the local API:
+The current **I don't get it!** action captures a selection snapshot and displays the explanation returned by the configured API:
 
 1. Select text on a normal HTTP(S) page.
 2. Right-click the selection.
