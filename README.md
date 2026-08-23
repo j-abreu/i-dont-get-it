@@ -85,11 +85,11 @@ The deployed Worker still needs an installation-credential flow before unrestric
 
 ## Current extension behavior
 
-The current **Explain selection** action captures a local selection snapshot and displays a deterministic explanation returned by the local API:
+The current **I don't get it!** action captures a local selection snapshot and displays a deterministic explanation returned by the local API:
 
 1. Select text on a normal HTTP(S) page.
 2. Right-click the selection.
-3. Choose **Explain selection**.
+3. Choose **I don't get it!**.
 4. A floating explanation card appears near the selection.
 
 The prototype card supports loading, close, error, and retry states and includes a collapsible view of the context used. It is isolated from page styling with Shadow DOM. Repeating the action replaces the existing card, and `Escape` closes it.

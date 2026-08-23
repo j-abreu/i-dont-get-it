@@ -20,7 +20,7 @@ describe('registerExplainSelectionMenu', () => {
     expect(removeAll).toHaveBeenCalledOnce();
     expect(create).toHaveBeenCalledWith({
       id: EXPLAIN_SELECTION_MENU_ID,
-      title: 'Explain selection',
+      title: "I don't get it!",
       contexts: ['selection'],
     });
     expect(removeAll.mock.invocationCallOrder[0]).toBeLessThan(create.mock.invocationCallOrder[0] ?? 0);

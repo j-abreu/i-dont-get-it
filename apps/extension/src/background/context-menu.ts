@@ -5,7 +5,7 @@ export async function registerExplainSelectionMenu(): Promise<void> {
 
   browser.contextMenus.create({
     id: EXPLAIN_SELECTION_MENU_ID,
-    title: 'Explain selection',
+    title: "I don't get it!",
     contexts: ['selection'],
   });
 }
