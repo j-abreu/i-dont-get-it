@@ -11,6 +11,13 @@ export default defineConfig({
     return {
       name: EXTENSION_NAME,
       description: EXTENSION_DESCRIPTION,
+      icons: {
+        16: 'icon/16.png',
+        32: 'icon/32.png',
+        48: 'icon/48.png',
+        96: 'icon/96.png',
+        128: 'icon/128.png',
+      },
       permissions: ['activeTab', 'contextMenus', 'scripting'],
       host_permissions: [getApiHostPermission(apiBaseUrl)],
     };
