@@ -79,7 +79,9 @@ Then open `http://127.0.0.1:4173/`. The fixture includes article prose, inline a
 
 The development extension is generated in `apps/extension/.output/chrome-mv3-dev`. The production extension is generated in `apps/extension/.output/chrome-mv3`.
 
-The Worker application is deliberately not wired into the extension yet. A deployed Worker still needs the installation-credential flow and production extension URL/host-permission configuration before public use.
+Development extension builds call the local Fastify API at `http://127.0.0.1:8787`. Production builds call the deployed Cloudflare Worker at `https://i-dont-get-it-api.jere-lab.workers.dev`. WXT generates only the matching host permission for each mode. `WXT_API_BASE_URL` can override the origin; production builds reject HTTP, loopback, credential-bearing, or path-bearing overrides.
+
+The deployed Worker still needs an installation-credential flow before unrestricted public use. The current rate limiter falls back to the connecting address when no installation identifier is supplied; that is abuse friction, not authentication.
 
 ## Current extension behavior
 
@@ -92,7 +94,7 @@ The current **Explain selection** action captures a local selection snapshot and
 
 The prototype card supports loading, close, error, and retry states and includes a collapsible view of the context used. It is isolated from page styling with Shadow DOM. Repeating the action replaces the existing card, and `Escape` closes it.
 
-Development builds also log the full local snapshot—including selected text and nearby context—to make extraction behavior inspectable. Production builds log only a summary. The selection snapshot is sent to `http://127.0.0.1:8787/explain` by the extension service worker. The API uses the provider configured in `apps/api/.env`; deterministic mode remains the default.
+Development builds also log the full local snapshot—including selected text and nearby context—to make extraction behavior inspectable. Production builds log only a summary. The extension service worker sends the snapshot to the API origin selected for the build mode. Development uses the provider configured in `apps/api/.env`; deterministic mode remains the default. Production uses the deployed Cloudflare Worker and Workers AI.
 
 If the API is stopped or unavailable, the card displays its existing error state and **Try again** control.
 

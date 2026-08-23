@@ -35,10 +35,16 @@ describe('requestExplanation', () => {
     );
 
     await expect(
-      requestExplanation(createRequest(), { fetch: failingFetch }),
+      requestExplanation(createRequest(), {
+        fetch: failingFetch,
+        apiBaseUrl: 'http://127.0.0.1:8787',
+      }),
     ).resolves.toMatchObject({ error: { code: 'service_unavailable', retryable: true } });
     await expect(
-      requestExplanation(createRequest(), { fetch: invalidFetch }),
+      requestExplanation(createRequest(), {
+        fetch: invalidFetch,
+        apiBaseUrl: 'http://127.0.0.1:8787',
+      }),
     ).resolves.toMatchObject({ error: { code: 'service_unavailable', retryable: true } });
   });
 });

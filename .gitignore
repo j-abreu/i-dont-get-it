@@ -7,3 +7,5 @@ dist/
 .env
 .env.*
 !.env.example
+!apps/extension/.env.development
+!apps/extension/.env.production

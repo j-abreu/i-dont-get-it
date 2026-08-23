@@ -6,7 +6,7 @@ import {
   type ExplainResponse,
 } from '@i-dont-get-it/contracts';
 
-export const DEFAULT_API_BASE_URL = 'http://127.0.0.1:8787';
+import { resolveApiBaseUrl } from '../shared/api-config';
 
 export async function requestExplanation(
   request: ExplainRequest,
@@ -16,7 +16,9 @@ export async function requestExplanation(
   } = {},
 ): Promise<ExplainResponse> {
   const fetcher = options.fetch ?? fetch;
-  const apiBaseUrl = options.apiBaseUrl ?? import.meta.env.WXT_API_BASE_URL ?? DEFAULT_API_BASE_URL;
+  const apiBaseUrl =
+    options.apiBaseUrl ??
+    resolveApiBaseUrl(import.meta.env.MODE, import.meta.env.WXT_API_BASE_URL);
 
   try {
     const response = await fetcher(new URL('/explain', apiBaseUrl), {
@@ -41,7 +43,7 @@ function createUnavailableResponse(): ExplainErrorResponse {
     version: EXPLANATION_CONTRACT_VERSION,
     error: {
       code: 'service_unavailable',
-      message: 'The local explanation service is unavailable.',
+      message: 'The explanation service is unavailable.',
       retryable: true,
     },
   };
