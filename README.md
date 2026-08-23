@@ -6,16 +6,18 @@ The initial product targets Chromium browsers and regular web pages. A user sele
 
 ## Status
 
-The first browser vertical slice and local API boundary are complete. The API supports deterministic local responses and live model explanations through a server-side OpenAI Responses API adapter.
+The first browser vertical slice and local API boundary are complete. The Fastify API supports deterministic local responses and live model explanations through a server-side OpenAI Responses API adapter. A separate Cloudflare Worker production target is now available for Workers AI evaluation.
 
 ## Repository structure
 
 ```text
 apps/
 ├── extension/  WXT browser extension
-└── api/        Fastify explanation gateway
+├── api/        Fastify/OpenAI local and reference gateway
+└── worker/     Cloudflare Workers/Workers AI production target
 packages/
-└── contracts/  Shared versioned request and response validation
+├── contracts/        Shared versioned request and response validation
+└── explanation-core/ Shared prompt construction and safety boundary
 ```
 
 ## Requirements
@@ -44,6 +46,12 @@ In a second terminal, start the local explanation API:
 pnpm dev:api
 ```
 
+To develop the separate Cloudflare target instead, authenticate Wrangler as described in `apps/worker/README.md`, then run:
+
+```sh
+pnpm dev:worker
+```
+
 The deterministic provider requires no credentials. For live explanations, copy `apps/api/.env.example` to `apps/api/.env`, set `EXPLANATION_PROVIDER=openai`, and provide `OPENAI_API_KEY`. The initial recommended model is `gpt-5-nano`. Credentials remain in the API process and are never bundled into the extension.
 
 The root command starts the extension development server. It watches the extension source and produces a development build. Load it manually:
@@ -70,6 +78,8 @@ pnpm --filter @i-dont-get-it/extension test:fixture
 Then open `http://127.0.0.1:4173/`. The fixture includes article prose, inline and multi-paragraph selections, link-heavy navigation, a dark panel, dynamic content, editable text, and a viewport-edge case.
 
 The development extension is generated in `apps/extension/.output/chrome-mv3-dev`. The production extension is generated in `apps/extension/.output/chrome-mv3`.
+
+The Worker application is deliberately not wired into the extension yet. A deployed Worker still needs the installation-credential flow and production extension URL/host-permission configuration before public use.
 
 ## Current extension behavior
 
