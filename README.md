@@ -30,6 +30,10 @@ packages/
 - pnpm 11
 - A Chromium-based browser
 
+## Versioning
+
+The extension follows semantic versioning. Small fixes and adjustments increment the patch version, new features increment the minor version, and large or breaking changes increment the major version.
+
 ## Development
 
 Install dependencies:
