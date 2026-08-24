@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { handleExplainSelectionClick } from '../src/background/explain-selection';
+import {
+  handleExplainSelectionClick,
+  handleExplainSelectionCommand,
+} from '../src/background/explain-selection';
 import { EXPLAIN_SELECTION_ENTRYPOINT } from '../src/shared/injection';
 
 const SUPPORTED_TAB = {
@@ -129,6 +132,76 @@ describe('handleExplainSelectionClick', () => {
 
     expect(warn).toHaveBeenCalledWith(
       expect.stringContaining('could not inject'),
+      expect.any(Error),
+    );
+  });
+});
+
+describe('handleExplainSelectionCommand', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('injects into accessible frames in the active tab and uses the captured selection', async () => {
+    const query = vi.fn().mockResolvedValue([SUPPORTED_TAB]);
+    const executeScript = vi.fn().mockResolvedValue([
+      {
+        frameId: 0,
+        result: {
+          status: 'rejected',
+          reason: 'empty-selection',
+          message: 'Select some text before asking for an explanation.',
+          page: {
+            title: 'Article',
+            url: 'https://example.com/article',
+            hostname: 'example.com',
+          },
+        },
+      },
+      {
+        frameId: 7,
+        result: {
+          status: 'captured',
+          source: 'dom',
+          snapshot: {
+            selectedText: 'selected iframe text',
+            context: { containingBlock: 'A paragraph with selected iframe text.' },
+            page: {
+              title: 'Embedded article',
+              url: 'https://example.com/embed',
+              hostname: 'example.com',
+              language: 'en',
+            },
+          },
+        },
+      },
+    ]);
+    vi.stubGlobal('browser', { tabs: { query }, scripting: { executeScript } });
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+
+    await handleExplainSelectionCommand();
+
+    expect(query).toHaveBeenCalledWith({ active: true, currentWindow: true });
+    expect(executeScript).toHaveBeenCalledWith({
+      target: { tabId: 42, allFrames: true },
+      files: [EXPLAIN_SELECTION_ENTRYPOINT],
+    });
+    expect(info).toHaveBeenCalledWith(
+      expect.stringContaining('captured a selection snapshot'),
+      expect.objectContaining({ frameId: 7, selectedTextLength: 20 }),
+    );
+  });
+
+  it('contains active-tab lookup failures', async () => {
+    const query = vi.fn().mockRejectedValue(new Error('Tabs unavailable'));
+    vi.stubGlobal('browser', { tabs: { query } });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    await expect(handleExplainSelectionCommand()).resolves.toBeUndefined();
+
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('could not find the active tab'),
       expect.any(Error),
     );
   });

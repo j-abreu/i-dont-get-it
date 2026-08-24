@@ -13,31 +13,71 @@ export async function handleExplainSelectionClick(
 ): Promise<void> {
   const targetUrl = info.frameUrl ?? info.pageUrl ?? tab?.url;
 
-  if (tab?.id === undefined || !isSupportedPageUrl(targetUrl)) {
+  await injectExplainSelection({
+    tab,
+    targetUrl,
+    target: tab?.id === undefined ? undefined : { tabId: tab.id, frameIds: [info.frameId ?? 0] },
+    fallbackSelectionText: info.selectionText,
+  });
+}
+
+export async function handleExplainSelectionCommand(): Promise<void> {
+  let tab: Browser.tabs.Tab | undefined;
+
+  try {
+    [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  } catch (error: unknown) {
+    console.warn(`${EXTENSION_NAME} could not find the active tab`, error);
+    return;
+  }
+
+  await injectExplainSelection({
+    tab,
+    targetUrl: tab?.url,
+    target: tab?.id === undefined ? undefined : { tabId: tab.id, allFrames: true },
+  });
+}
+
+type ExplainSelectionTarget =
+  | { tabId: number; frameIds: number[] }
+  | { tabId: number; allFrames: true };
+
+type InjectExplainSelectionOptions = {
+  tab: Browser.tabs.Tab | undefined;
+  targetUrl: string | undefined;
+  target: ExplainSelectionTarget | undefined;
+  fallbackSelectionText?: string;
+};
+
+async function injectExplainSelection(options: InjectExplainSelectionOptions): Promise<void> {
+  const { tab, targetUrl, target } = options;
+
+  if (tab?.id === undefined || target === undefined || !isSupportedPageUrl(targetUrl)) {
     console.warn(`${EXTENSION_NAME} cannot run on this page`, {
       pageProtocol: getProtocol(targetUrl),
     });
     return;
   }
 
-  const targetFrameId = info.frameId ?? 0;
-
   try {
     const results = await browser.scripting.executeScript<[], SelectionCaptureResult>({
-      target: {
-        tabId: tab.id,
-        frameIds: [targetFrameId],
-      },
+      target,
       files: [EXPLAIN_SELECTION_ENTRYPOINT],
     });
-    const rawResult = results[0]?.result;
+    const validResults = results.filter(
+      (entry): entry is typeof entry & { result: SelectionCaptureResult } =>
+        isSelectionCaptureResult(entry.result),
+    );
+    const injectedResult =
+      validResults.find((entry) => entry.result.status === 'captured') ?? validResults[0];
+    const rawResult = injectedResult?.result;
 
     if (!isSelectionCaptureResult(rawResult)) {
       console.warn(`${EXTENSION_NAME} content script returned an invalid selection result`);
       return;
     }
 
-    const result = applyContextMenuFallback(rawResult, info.selectionText);
+    const result = applyContextMenuFallback(rawResult, options.fallbackSelectionText);
 
     if (result.status === 'rejected') {
       console.warn(`${EXTENSION_NAME} selection was rejected`, {
@@ -49,7 +89,7 @@ export async function handleExplainSelectionClick(
 
     console.info(`${EXTENSION_NAME} captured a selection snapshot`, {
       tabId: tab.id,
-      frameId: targetFrameId,
+      frameId: injectedResult?.frameId,
       source: result.source,
       selectedTextLength: result.snapshot.selectedText.length,
       hostname: result.snapshot.page.hostname,

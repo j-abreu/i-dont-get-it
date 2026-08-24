@@ -1,6 +1,10 @@
 import { defineConfig } from 'wxt';
 
 import { getApiHostPermission, resolveApiBaseUrl } from './src/shared/api-config';
+import {
+  EXPLAIN_SELECTION_COMMAND_ID,
+  EXPLAIN_SELECTION_SHORTCUTS,
+} from './src/shared/commands';
 import { EXTENSION_DESCRIPTION, EXTENSION_NAME } from './src/shared/extension-info';
 
 export default defineConfig({
@@ -17,6 +21,12 @@ export default defineConfig({
         48: 'icon/48.png',
         96: 'icon/96.png',
         128: 'icon/128.png',
+      },
+      commands: {
+        [EXPLAIN_SELECTION_COMMAND_ID]: {
+          suggested_key: EXPLAIN_SELECTION_SHORTCUTS,
+          description: 'Explain the selected text.',
+        },
       },
       permissions: ['activeTab', 'contextMenus', 'scripting'],
       host_permissions: [getApiHostPermission(apiBaseUrl)],

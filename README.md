@@ -96,9 +96,10 @@ The deployed Worker still needs an installation-credential flow before unrestric
 The current **I don't get it!** action captures a selection snapshot and displays the explanation returned by the configured API:
 
 1. Select text on a normal HTTP(S) page.
-2. Right-click the selection.
-3. Choose **I don't get it!**.
-4. A floating explanation card appears near the selection.
+2. Either choose **I don't get it!** from the context menu or press `Ctrl+Shift+Y` (`Control+Shift+Y` on macOS).
+3. A floating explanation card appears near the selection.
+
+The shortcut is scoped to Chrome and can be changed or restored at `chrome://extensions/shortcuts` if it conflicts with another installed extension.
 
 The prototype card supports loading, close, error, and retry states and includes a collapsible view of the context used. It is isolated from page styling with Shadow DOM. Repeating the action replaces the existing card, and `Escape` closes it.
 

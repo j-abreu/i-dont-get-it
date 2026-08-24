@@ -1,6 +1,11 @@
 import { registerExplainSelectionMenu } from '../src/background/context-menu';
-import { handleExplainSelectionClick } from '../src/background/explain-selection';
+import {
+  handleExplainSelectionClick,
+  handleExplainSelectionCommand,
+} from '../src/background/explain-selection';
 import { registerExplanationMessageHandler } from '../src/background/explanation-messages';
+import { warnIfExplainSelectionShortcutIsUnassigned } from '../src/background/shortcut';
+import { EXPLAIN_SELECTION_COMMAND_ID } from '../src/shared/commands';
 import { EXTENSION_NAME } from '../src/shared/extension-info';
 import { EXPLAIN_SELECTION_MENU_ID } from '../src/shared/menu';
 
@@ -14,7 +19,13 @@ export default defineBackground(() => {
     });
   };
 
-  browser.runtime.onInstalled.addListener(refreshContextMenu);
+  browser.runtime.onInstalled.addListener((details) => {
+    refreshContextMenu();
+
+    if (details.reason === 'install') {
+      void warnIfExplainSelectionShortcutIsUnassigned();
+    }
+  });
   browser.runtime.onStartup.addListener(refreshContextMenu);
 
   browser.contextMenus.onClicked.addListener((info, tab) => {
@@ -23,5 +34,13 @@ export default defineBackground(() => {
     }
 
     void handleExplainSelectionClick(info, tab);
+  });
+
+  browser.commands.onCommand.addListener((command) => {
+    if (command !== EXPLAIN_SELECTION_COMMAND_ID) {
+      return;
+    }
+
+    void handleExplainSelectionCommand();
   });
 });
