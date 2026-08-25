@@ -49,19 +49,19 @@ export const STRUCTURED_EXPLANATION_JSON_SCHEMA = {
       minLength: 1,
       maxLength: 1_500,
       description:
-        'Define or identify the selected passage independently of the page. For a named entity, state what it is. Do not describe only its role in the supplied context.',
+        'Define or identify only the exact selected text, independently of the page. Never expand the subject to adjacent words or define a larger phrase from the context. Do not mention its use in this page or say "in this case". For a named entity, state what it is. Example: if the exact selection is "software" inside "software load balancer", define software itself, not a load balancer.',
     },
     contextualMeaning: {
       type: 'string',
       minLength: 1,
       maxLength: 4_000,
       description:
-        'Explain what the selected passage means or does in its immediate context. Do not summarize unrelated page content.',
+        'Explain what the exact selected text means or does specifically in the supplied immediate context. Do not merely repeat or paraphrase the definition. Explain how it contributes to a larger surrounding phrase when applicable. Example: for "software" in "software load balancer", explain that the load balancer is implemented as programs rather than dedicated physical hardware. Do not summarize unrelated page content.',
     },
     synonyms: {
       type: 'array',
       description:
-        'Up to five true synonyms, aliases, abbreviations, or alternate names for the selected passage. Return an empty array when none apply. Do not return merely related concepts.',
+        'Actively look for up to five genuine synonyms, close substitutes, aliases, abbreviations, or alternate names for the exact selected text, written in the response language. Each item must preserve the same basic meaning and grammatical category when substituted, not be a definition, subtype, broader category, related concept, or phrase that merely contains the selected text. Return an empty array only when no genuine alternative applies.',
       items: { type: 'string', minLength: 1, maxLength: 200 },
       maxItems: 5,
     },

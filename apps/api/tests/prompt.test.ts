@@ -13,8 +13,8 @@ describe('buildExplanationPrompt', () => {
 
     expect(prompt.instructions).toContain('untrusted quoted page data');
     expect(prompt.instructions).toContain('The definition must answer');
-    expect(prompt.instructions).toContain('The contextual meaning must then explain');
-    expect(prompt.instructions).toContain('Synonyms must be true substitutes');
+    expect(prompt.instructions).toContain('The contextual meaning must explain');
+    expect(prompt.instructions).toContain('Actively check for useful synonyms');
     expect(prompt.instructions).toContain('Never repeat input field names');
     expect(prompt.instructions).not.toContain(request.selection.selectedText);
     expect(prompt.instructions).not.toContain(request.selection.context.containingBlock);
@@ -51,7 +51,7 @@ describe('buildExplanationPrompt', () => {
     const prompt = buildExplanationPrompt(request);
     const definitionInstruction = 'define its meaning in plain language';
     const contextInstruction =
-      'The contextual meaning must then explain how the selected passage functions in the immediate context';
+      'The contextual meaning must explain how the selected passage functions specifically in immediateContext';
 
     expect(prompt.instructions).toContain(definitionInstruction);
     expect(prompt.instructions).toContain(contextInstruction);
@@ -59,6 +59,39 @@ describe('buildExplanationPrompt', () => {
       prompt.instructions.indexOf(contextInstruction),
     );
     expect(prompt.instructions).toContain('Context is supporting evidence, not the subject');
+  });
+
+  it('keeps an exact word selection separate from the larger contextual phrase', () => {
+    const request = createRequest();
+    request.selection.selectedText = 'software';
+    request.selection.context.containingBlock =
+      'A software load balancer is more flexible than a hardware load balancer.';
+
+    const prompt = buildExplanationPrompt(request);
+
+    expect(prompt.instructions).toContain('Respect the exact selection boundary');
+    expect(prompt.instructions).toContain(
+      'if passage is "software" and immediateContext contains "software load balancer", define software itself',
+    );
+    expect(prompt.instructions).toContain(
+      'It must not merely repeat or paraphrase the definition',
+    );
+    expect(prompt.instructions).toContain(
+      'phrase that merely contains the selected text',
+    );
+    expect(prompt.instructions).toContain('Final field check before responding');
+    expect(prompt.instructions).toContain(
+      '"tool", "system", "solution", and "implementation" are related or broader concepts, not synonyms',
+    );
+    expect(prompt.instructions.lastIndexOf('Final field check')).toBeGreaterThan(
+      prompt.instructions.indexOf('Use a short paragraph in plain language'),
+    );
+    expect(prompt.instructions).toContain('Actively check for useful synonyms');
+    expect(JSON.parse(prompt.input)).toMatchObject({
+      passage: 'software',
+      immediateContext:
+        'A software load balancer is more flexible than a hardware load balancer.',
+    });
   });
 
   it('identifies a named entity and prioritizes the sentence containing it', () => {
