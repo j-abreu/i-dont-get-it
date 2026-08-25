@@ -10,7 +10,11 @@ describe('requestExplanation', () => {
         JSON.stringify({
           version: EXPLANATION_CONTRACT_VERSION,
           requestId: 'request-1',
-          explanation: { text: 'A response from the API.' },
+          explanation: {
+            definition: 'A response definition.',
+            contextualMeaning: 'A response from the API.',
+            synonyms: [],
+          },
         }),
         { status: 200, headers: { 'content-type': 'application/json' } },
       ),
@@ -21,7 +25,13 @@ describe('requestExplanation', () => {
         fetch: fetcher,
         apiBaseUrl: 'http://127.0.0.1:9999',
       }),
-    ).resolves.toMatchObject({ explanation: { text: 'A response from the API.' } });
+    ).resolves.toMatchObject({
+      explanation: {
+        definition: 'A response definition.',
+        contextualMeaning: 'A response from the API.',
+        synonyms: [],
+      },
+    });
     expect(fetcher).toHaveBeenCalledWith(
       new URL('http://127.0.0.1:9999/explain'),
       expect.objectContaining({ method: 'POST', body: JSON.stringify(createRequest()) }),

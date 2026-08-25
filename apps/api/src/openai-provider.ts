@@ -1,4 +1,8 @@
 import OpenAI, { APIConnectionError, APIConnectionTimeoutError, APIError } from 'openai';
+import {
+  isStructuredExplanation,
+  STRUCTURED_EXPLANATION_JSON_SCHEMA,
+} from '@i-dont-get-it/contracts';
 
 import { buildExplanationPrompt } from './prompt.js';
 import {
@@ -18,6 +22,15 @@ export type ResponsesClient = {
       max_output_tokens: number;
       reasoning: { effort: 'none' | 'minimal' };
       store: false;
+      text: {
+        format: {
+          type: 'json_schema';
+          name: 'structured_explanation';
+          description: 'A standalone definition and its meaning in the supplied context.';
+          strict: true;
+          schema: typeof STRUCTURED_EXPLANATION_JSON_SCHEMA;
+        };
+      };
     }) => Promise<{ output_text: string }>;
   };
 };
@@ -38,7 +51,7 @@ export function createOpenAIExplanationProvider(
     throw new Error('The OpenAI provider requires OPENAI_API_KEY and OPENAI_MODEL.');
   }
 
-  const client = options.client ?? (new OpenAI({ apiKey }) as unknown as ResponsesClient);
+  const client: ResponsesClient = options.client ?? new OpenAI({ apiKey });
   const reasoningEffort = model === 'gpt-5-nano' ? 'minimal' : 'none';
 
   return {
@@ -58,14 +71,23 @@ export function createOpenAIExplanationProvider(
           max_output_tokens: prompt.maxOutputTokens,
           reasoning: { effort: reasoningEffort },
           store: false,
+          text: {
+            format: {
+              type: 'json_schema',
+              name: 'structured_explanation',
+              description: 'A standalone definition and its meaning in the supplied context.',
+              strict: true,
+              schema: STRUCTURED_EXPLANATION_JSON_SCHEMA,
+            },
+          },
         });
-        const text = response.output_text.trim();
+        const explanation = parseStructuredExplanation(response.output_text);
 
-        if (text.length === 0) {
+        if (explanation === undefined) {
           throw new ExplanationProviderError('internal_error', false);
         }
 
-        return { text };
+        return explanation;
       } catch (error: unknown) {
         if (error instanceof ExplanationProviderError) {
           throw error;
@@ -75,6 +97,15 @@ export function createOpenAIExplanationProvider(
       }
     },
   };
+}
+
+function parseStructuredExplanation(value: string) {
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return isStructuredExplanation(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function classifyOpenAIError(error: unknown): ExplanationProviderError {

@@ -7,7 +7,7 @@ The Worker exposes the same versioned endpoints:
 - `GET /health`
 - `POST /explain`
 
-Explanation requests use the shared contracts and prompt builder, run through the `AI` binding with `@cf/meta/llama-3.1-8b-instruct-fast`, and are limited to 10 requests per minute per installation identifier or fallback client address.
+Explanation requests use the shared contracts and prompt builder, run through the `AI` binding with `@cf/meta/llama-3.1-8b-instruct-fast`, and are limited to 10 requests per minute per installation identifier or fallback client address. Workers AI JSON Schema mode returns separate `definition`, `contextualMeaning`, and `synonyms` fields; the Worker validates the exact structure before returning it.
 
 ## Local checks
 
@@ -43,6 +43,7 @@ Worker logs must stay metadata-only. Never add the request body, selected text, 
 ## Cloudflare references
 
 - [Workers AI binding](https://developers.cloudflare.com/workers-ai/configuration/bindings/)
+- [Workers AI JSON mode](https://developers.cloudflare.com/workers-ai/features/json-mode/)
 - [Llama 3.1 8B Instruct Fast model](https://developers.cloudflare.com/ai/models/%40cf/meta/llama-3.1-8b-instruct-fast/)
 - [Rate Limiting binding](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
 - [Wrangler configuration](https://developers.cloudflare.com/workers/wrangler/configuration/)

@@ -1,8 +1,6 @@
-import type { ExplainRequest } from '@i-dont-get-it/contracts';
+import type { ExplainRequest, StructuredExplanation } from '@i-dont-get-it/contracts';
 
-export type ExplanationProviderResult = {
-  text: string;
-};
+export type ExplanationProviderResult = StructuredExplanation;
 
 export type ExplanationProvider = {
   explain: (request: ExplainRequest) => Promise<ExplanationProviderResult>;
@@ -25,7 +23,9 @@ export const deterministicExplanationProvider: ExplanationProvider = {
     const subject = request.selection.context.heading || request.selection.page.title || 'this passage';
 
     return {
-      text: `In the context of ${subject}, “${request.selection.selectedText}” describes the role or idea expressed by the surrounding passage. The API is running in deterministic mode; configure the OpenAI provider for a model-generated explanation.`,
+      definition: `“${request.selection.selectedText}” is the selected term or passage. The API is running in deterministic mode; configure the OpenAI provider for a model-generated definition.`,
+      contextualMeaning: `In the context of ${subject}, it describes the role or idea expressed by the surrounding passage.`,
+      synonyms: [],
     };
   },
 };

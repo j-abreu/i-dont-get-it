@@ -1,4 +1,4 @@
-export const EXPLANATION_CONTRACT_VERSION = 1 as const;
+export const EXPLANATION_CONTRACT_VERSION = 2 as const;
 
 export const EXPLANATION_LEVELS = ['concise', 'beginner', 'simple', 'detailed'] as const;
 export type ExplanationLevel = (typeof EXPLANATION_LEVELS)[number];
@@ -31,10 +31,43 @@ export type ExplainRequest = {
 export type ExplainSuccessResponse = {
   version: typeof EXPLANATION_CONTRACT_VERSION;
   requestId: string;
-  explanation: {
-    text: string;
-  };
+  explanation: StructuredExplanation;
 };
+
+export type StructuredExplanation = {
+  definition: string;
+  contextualMeaning: string;
+  synonyms: string[];
+};
+
+export const STRUCTURED_EXPLANATION_JSON_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    definition: {
+      type: 'string',
+      minLength: 1,
+      maxLength: 1_500,
+      description:
+        'Define or identify the selected passage independently of the page. For a named entity, state what it is. Do not describe only its role in the supplied context.',
+    },
+    contextualMeaning: {
+      type: 'string',
+      minLength: 1,
+      maxLength: 4_000,
+      description:
+        'Explain what the selected passage means or does in its immediate context. Do not summarize unrelated page content.',
+    },
+    synonyms: {
+      type: 'array',
+      description:
+        'Up to five true synonyms, aliases, abbreviations, or alternate names for the selected passage. Return an empty array when none apply. Do not return merely related concepts.',
+      items: { type: 'string', minLength: 1, maxLength: 200 },
+      maxItems: 5,
+    },
+  },
+  required: ['definition', 'contextualMeaning', 'synonyms'],
+} as const;
 
 export const EXPLAIN_ERROR_CODES = [
   'invalid_request',
@@ -64,7 +97,10 @@ const LIMITS = {
   language: 100,
   url: 2_048,
   hostname: 253,
-  explanation: 20_000,
+  definition: 1_500,
+  contextualMeaning: 4_000,
+  synonym: 200,
+  synonyms: 5,
   requestId: 200,
 } as const;
 
@@ -108,8 +144,7 @@ export function isExplainResponse(value: unknown): value is ExplainResponse {
   if ('explanation' in value) {
     return (
       isBoundedString(value.requestId, 1, LIMITS.requestId) &&
-      isRecord(value.explanation) &&
-      isBoundedString(value.explanation.text, 1, LIMITS.explanation)
+      isStructuredExplanation(value.explanation)
     );
   }
 
@@ -122,12 +157,31 @@ export function isExplainResponse(value: unknown): value is ExplainResponse {
   );
 }
 
+export function isStructuredExplanation(value: unknown): value is StructuredExplanation {
+  if (!isRecord(value) || !hasExactlyKeys(value, ['definition', 'contextualMeaning', 'synonyms'])) {
+    return false;
+  }
+
+  return (
+    isBoundedString(value.definition, 1, LIMITS.definition) &&
+    isBoundedString(value.contextualMeaning, 1, LIMITS.contextualMeaning) &&
+    Array.isArray(value.synonyms) &&
+    value.synonyms.length <= LIMITS.synonyms &&
+    value.synonyms.every((synonym) => isBoundedString(synonym, 1, LIMITS.synonym))
+  );
+}
+
 export function isExplainSuccessResponse(value: unknown): value is ExplainSuccessResponse {
   return isExplainResponse(value) && 'explanation' in value;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function hasExactlyKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
+  const actualKeys = Object.keys(value);
+  return actualKeys.length === keys.length && keys.every((key) => key in value);
 }
 
 function isBoundedString(value: unknown, minimum: number, maximum: number): value is string {

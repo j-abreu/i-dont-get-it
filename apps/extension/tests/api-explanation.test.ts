@@ -13,13 +13,13 @@ describe('generateApiExplanation', () => {
     const sendMessage = vi.fn().mockResolvedValue({
       version: EXPLANATION_CONTRACT_VERSION,
       requestId: 'request-1',
-      explanation: { text: 'A live-boundary explanation.' },
+      explanation: structured('A live definition.', 'A live-boundary explanation.'),
     });
     vi.stubGlobal('browser', { runtime: { sendMessage } });
 
-    await expect(generateApiExplanation(createSnapshot(), { level: 'simple' })).resolves.toEqual({
-      text: 'A live-boundary explanation.',
-    });
+    await expect(generateApiExplanation(createSnapshot(), { level: 'simple' })).resolves.toEqual(
+      structured('A live definition.', 'A live-boundary explanation.'),
+    );
     expect(sendMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'i-dont-get-it/explain',
@@ -36,7 +36,7 @@ describe('generateApiExplanation', () => {
     const sendMessage = vi.fn().mockResolvedValue({
       version: EXPLANATION_CONTRACT_VERSION,
       requestId: 'request-2',
-      explanation: { text: 'A detailed explanation.' },
+      explanation: structured('A detailed definition.', 'A detailed explanation.'),
     });
     vi.stubGlobal('browser', { runtime: { sendMessage } });
     const snapshot = createSnapshot();
@@ -57,7 +57,7 @@ describe('generateApiExplanation', () => {
     const sendMessage = vi.fn().mockResolvedValue({
       version: EXPLANATION_CONTRACT_VERSION,
       requestId: 'request-3',
-      explanation: { text: 'A beginner-friendly explanation.' },
+      explanation: structured('A beginner-friendly definition.', 'A beginner-friendly explanation.'),
     });
     vi.stubGlobal('browser', { runtime: { sendMessage } });
     const snapshot = createSnapshot();
@@ -103,4 +103,8 @@ function createSnapshot(): SelectionSnapshot {
       language: 'en',
     },
   };
+}
+
+function structured(definition: string, contextualMeaning: string) {
+  return { definition, contextualMeaning, synonyms: [] };
 }

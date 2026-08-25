@@ -8,20 +8,30 @@ import {
 import { ExplanationProviderError } from '../src/provider.js';
 
 describe('OpenAI explanation provider', () => {
-  it('uses the configured model, disables storage, and returns output text', async () => {
+  it('uses structured output and returns the validated explanation', async () => {
+    const explanation = structured('A model definition.', 'A model contextual meaning.');
     const create = vi
       .fn<ResponsesClient['responses']['create']>()
-      .mockResolvedValue({ output_text: '  A model explanation.  ' });
+      .mockResolvedValue({ output_text: JSON.stringify(explanation) });
     const provider = createProvider(create);
 
-    await expect(provider.explain(createRequest())).resolves.toEqual({
-      text: 'A model explanation.',
-    });
+    await expect(provider.explain(createRequest())).resolves.toEqual(explanation);
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         model: 'configured-model',
         reasoning: { effort: 'none' },
         store: false,
+        text: {
+          format: expect.objectContaining({
+            type: 'json_schema',
+            name: 'structured_explanation',
+            strict: true,
+            schema: expect.objectContaining({
+              additionalProperties: false,
+              required: ['definition', 'contextualMeaning', 'synonyms'],
+            }),
+          }),
+        },
         instructions: expect.stringContaining('untrusted quoted page data'),
         input: [
           {
@@ -36,7 +46,9 @@ describe('OpenAI explanation provider', () => {
   it('uses minimal reasoning for gpt-5-nano compatibility', async () => {
     const create = vi
       .fn<ResponsesClient['responses']['create']>()
-      .mockResolvedValue({ output_text: 'A concise explanation.' });
+      .mockResolvedValue({
+        output_text: JSON.stringify(structured('A definition.', 'A concise explanation.')),
+      });
     const client: ResponsesClient = { responses: { create } };
     const provider = createOpenAIExplanationProvider({
       apiKey: 'test-key',
@@ -51,9 +63,11 @@ describe('OpenAI explanation provider', () => {
     );
   });
 
-  it('rejects an empty model response as a non-retryable internal error', async () => {
+  it('rejects malformed structured output as a non-retryable internal error', async () => {
     const provider = createProvider(
-      vi.fn<ResponsesClient['responses']['create']>().mockResolvedValue({ output_text: '   ' }),
+      vi.fn<ResponsesClient['responses']['create']>().mockResolvedValue({
+        output_text: JSON.stringify({ definition: 'Missing required fields.' }),
+      }),
     );
 
     await expect(provider.explain(createRequest())).rejects.toMatchObject({
@@ -92,6 +106,10 @@ function createProvider(create: ResponsesClient['responses']['create']) {
     model: 'configured-model',
     client,
   });
+}
+
+function structured(definition: string, contextualMeaning: string) {
+  return { definition, contextualMeaning, synonyms: [] };
 }
 
 function createRequest(): ExplainRequest {

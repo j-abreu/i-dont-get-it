@@ -24,7 +24,11 @@ describe('Cloudflare Worker API', () => {
 
   it('validates and explains a request through the provider boundary', async () => {
     const provider: ExplanationProvider = {
-      explain: vi.fn().mockResolvedValue({ text: 'A Worker-generated explanation.' }),
+      explain: vi.fn().mockResolvedValue({
+        definition: 'A Worker-generated definition.',
+        contextualMeaning: 'A Worker-generated contextual meaning.',
+        synonyms: [],
+      }),
     };
     const response = await handleRequest(explainRequest(createRequest()), {
       provider,
@@ -34,7 +38,11 @@ describe('Cloudflare Worker API', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
       version: EXPLANATION_CONTRACT_VERSION,
-      explanation: { text: 'A Worker-generated explanation.' },
+      explanation: {
+        definition: 'A Worker-generated definition.',
+        contextualMeaning: 'A Worker-generated contextual meaning.',
+        synonyms: [],
+      },
     });
     expect(provider.explain).toHaveBeenCalledWith(createRequest());
     expect(response.headers.get('cache-control')).toBe('no-store');

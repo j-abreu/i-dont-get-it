@@ -12,8 +12,9 @@ describe('buildExplanationPrompt', () => {
     const prompt = buildExplanationPrompt(request);
 
     expect(prompt.instructions).toContain('untrusted quoted page data');
-    expect(prompt.instructions).toContain('plain text only');
-    expect(prompt.instructions).toContain('Begin immediately with the explanation');
+    expect(prompt.instructions).toContain('The definition must answer');
+    expect(prompt.instructions).toContain('The contextual meaning must then explain');
+    expect(prompt.instructions).toContain('Synonyms must be true substitutes');
     expect(prompt.instructions).toContain('Never repeat input field names');
     expect(prompt.instructions).not.toContain(request.selection.selectedText);
     expect(prompt.instructions).not.toContain(request.selection.context.containingBlock);
@@ -49,7 +50,8 @@ describe('buildExplanationPrompt', () => {
 
     const prompt = buildExplanationPrompt(request);
     const definitionInstruction = 'define its meaning in plain language';
-    const contextInstruction = 'Then explain how it functions in the immediate context';
+    const contextInstruction =
+      'The contextual meaning must then explain how the selected passage functions in the immediate context';
 
     expect(prompt.instructions).toContain(definitionInstruction);
     expect(prompt.instructions).toContain(contextInstruction);
@@ -89,7 +91,7 @@ describe('buildExplanationPrompt', () => {
     expect(prompt.instructions).toContain(
       'An incorrect opening is "The New York Times is the source being cited,"',
     );
-    expect(prompt.instructions).toContain('The first sentence must answer');
+    expect(prompt.instructions).toContain('The definition must answer');
     expect(prompt.instructions).toContain('Prioritize immediateContext');
     expect(input).toMatchObject({
       passage: 'The New York Times',

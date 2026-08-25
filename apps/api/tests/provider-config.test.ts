@@ -1,3 +1,4 @@
+import { EXPLANATION_CONTRACT_VERSION } from '@i-dont-get-it/contracts';
 import { describe, expect, it } from 'vitest';
 
 import { createConfiguredExplanationProvider } from '../src/provider-config.js';
@@ -8,7 +9,7 @@ describe('provider configuration', () => {
 
     await expect(
       provider.explain({
-        version: 1,
+        version: EXPLANATION_CONTRACT_VERSION,
         selection: {
           selectedText: 'selected text',
           context: { containingBlock: 'selected text in context' },
@@ -16,7 +17,11 @@ describe('provider configuration', () => {
         },
         preferences: { level: 'simple' },
       }),
-    ).resolves.toMatchObject({ text: expect.stringContaining('deterministic mode') });
+    ).resolves.toMatchObject({
+      definition: expect.stringContaining('deterministic mode'),
+      contextualMeaning: expect.any(String),
+      synonyms: [],
+    });
   });
 
   it('fails fast when OpenAI configuration is incomplete', () => {

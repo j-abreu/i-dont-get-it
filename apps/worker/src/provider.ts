@@ -1,11 +1,14 @@
-import type { ExplainRequest } from '@i-dont-get-it/contracts';
+import {
+  isStructuredExplanation,
+  STRUCTURED_EXPLANATION_JSON_SCHEMA,
+  type ExplainRequest,
+  type StructuredExplanation,
+} from '@i-dont-get-it/contracts';
 import { buildExplanationPrompt } from '@i-dont-get-it/explanation-core';
 
 export const WORKERS_AI_MODEL = '@cf/meta/llama-3.1-8b-instruct-fast' as const;
 
-export type ExplanationProviderResult = {
-  text: string;
-};
+export type ExplanationProviderResult = StructuredExplanation;
 
 export type ExplanationProvider = {
   explain: (request: ExplainRequest) => Promise<ExplanationProviderResult>;
@@ -19,6 +22,10 @@ export type WorkersAiBinding = {
       max_tokens: number;
       temperature: number;
       stream: false;
+      response_format: {
+        type: 'json_schema';
+        json_schema: typeof STRUCTURED_EXPLANATION_JSON_SCHEMA;
+      };
     },
   ): Promise<unknown>;
 };
@@ -49,15 +56,19 @@ export function createWorkersAiExplanationProvider(ai: WorkersAiBinding): Explan
           max_tokens: prompt.maxOutputTokens,
           temperature: 0.2,
           stream: false,
+          response_format: {
+            type: 'json_schema',
+            json_schema: STRUCTURED_EXPLANATION_JSON_SCHEMA,
+          },
         });
-        const text = extractText(result);
+        const explanation = extractStructuredExplanation(result);
 
-        if (text === undefined || text.length === 0) {
+        if (explanation === undefined) {
           console.error('Workers AI returned no usable explanation.', describeResultShape(result));
           throw new ExplanationProviderError('internal_error', false);
         }
 
-        return { text };
+        return explanation;
       } catch (error: unknown) {
         if (error instanceof ExplanationProviderError) {
           throw error;
@@ -70,13 +81,13 @@ export function createWorkersAiExplanationProvider(ai: WorkersAiBinding): Explan
   };
 }
 
-function extractText(result: unknown): string | undefined {
+function extractStructuredExplanation(result: unknown): StructuredExplanation | undefined {
   if (!isRecord(result)) {
     return undefined;
   }
 
-  if (typeof result.response === 'string') {
-    return result.response.trim();
+  if (isStructuredExplanation(result.response)) {
+    return result.response;
   }
 
   const firstChoice = Array.isArray(result.choices) ? result.choices[0] : undefined;
@@ -84,9 +95,21 @@ function extractText(result: unknown): string | undefined {
     return undefined;
   }
 
-  return typeof firstChoice.message.content === 'string'
-    ? firstChoice.message.content.trim()
-    : undefined;
+  const content = firstChoice.message.content;
+  if (isStructuredExplanation(content)) {
+    return content;
+  }
+
+  if (typeof content !== 'string') {
+    return undefined;
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(content);
+    return isStructuredExplanation(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function classifyWorkersAiError(error: unknown): ExplanationProviderError {

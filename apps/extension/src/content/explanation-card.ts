@@ -1,5 +1,5 @@
-import type { ExplanationProvider } from './explanation-provider';
 import type { SelectionSnapshot } from '../shared/selection';
+import type { Explanation, ExplanationProvider } from './explanation-provider';
 
 export const EXPLANATION_CARD_HOST_ID = 'i-dont-get-it-explanation-card';
 
@@ -203,7 +203,7 @@ async function requestExplanation(
       return;
     }
 
-    renderSimpleSuccess(card, options, explanation.text, close);
+    renderSimpleSuccess(card, options, explanation, close);
   } catch (error: unknown) {
     if (!card.isConnected) {
       return;
@@ -235,7 +235,7 @@ function renderLoading(card: HTMLElement, snapshot: SelectionSnapshot, close: ()
 function renderSimpleSuccess(
   card: HTMLElement,
   options: MountExplanationCardOptions,
-  simpleExplanation: string,
+  simpleExplanation: Explanation,
   close: () => void,
 ): void {
   let refinementRequestPending = false;
@@ -267,7 +267,7 @@ function renderSimpleSuccess(
         return;
       }
 
-      currentExplanation = refinedExplanation.text;
+      currentExplanation = refinedExplanation;
       currentExplanationLabel = refinement.successLabel;
       selectedLevel = refinement.level;
       refinementRequestPending = false;
@@ -356,7 +356,7 @@ type RefinementControl =
 function renderExplanation(
   card: HTMLElement,
   snapshot: SelectionSnapshot,
-  explanation: string,
+  explanation: Explanation,
   explanationLabel: string,
   close: () => void,
   refinementControl?: RefinementControl,
@@ -367,11 +367,34 @@ function renderExplanation(
   label.className = 'eyebrow';
   label.textContent = explanationLabel;
 
-  const text = card.ownerDocument.createElement('p');
-  text.className = 'explanation';
-  text.textContent = explanation;
+  const content = card.ownerDocument.createElement('div');
+  content.className = 'explanation';
+  content.append(
+    createExplanationSection(card.ownerDocument, 'Definition', explanation.definition, 'definition'),
+    createExplanationSection(
+      card.ownerDocument,
+      'In this context',
+      explanation.contextualMeaning,
+      'contextual-meaning',
+    ),
+  );
 
-  card.append(label, text);
+  if (explanation.synonyms.length > 0) {
+    const synonyms = card.ownerDocument.createElement('section');
+    synonyms.className = 'explanation-section synonyms';
+    const heading = card.ownerDocument.createElement('h3');
+    heading.textContent = 'Synonyms and other names';
+    const list = card.ownerDocument.createElement('ul');
+    for (const synonym of explanation.synonyms) {
+      const item = card.ownerDocument.createElement('li');
+      item.textContent = synonym;
+      list.append(item);
+    }
+    synonyms.append(heading, list);
+    content.append(synonyms);
+  }
+
+  card.append(label, content);
 
   if (refinementControl !== undefined) {
     card.append(createRefinementControl(card.ownerDocument, refinementControl));
@@ -386,6 +409,22 @@ function renderExplanation(
   details.append(summary, contextText);
 
   card.append(details);
+}
+
+function createExplanationSection(
+  document: Document,
+  headingText: string,
+  bodyText: string,
+  className: string,
+): HTMLElement {
+  const section = document.createElement('section');
+  section.className = `explanation-section ${className}`;
+  const heading = document.createElement('h3');
+  heading.textContent = headingText;
+  const body = document.createElement('p');
+  body.textContent = bodyText;
+  section.append(heading, body);
+  return section;
 }
 
 function createRefinementControl(
@@ -625,7 +664,11 @@ function createStyles(document: Document): HTMLStyleElement {
       max-height: 88px; overflow: auto; padding: 2px 0 2px 10px;
     }
     .eyebrow { color: rgba(27, 30, 36, 0.56); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; margin: 0 0 5px; text-transform: uppercase; }
-    .explanation { color: #14161a; font-size: 15px; margin: 0; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.28); }
+    .explanation { color: #14161a; display: grid; font-size: 15px; gap: 12px; margin: 0; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.28); }
+    .explanation-section h3 { color: rgba(27, 30, 36, 0.62); font-size: 11px; font-weight: 750; letter-spacing: 0.06em; margin: 0 0 3px; text-transform: uppercase; }
+    .explanation-section p { margin: 0; }
+    .synonyms ul { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+    .synonyms li { background: rgba(255, 255, 255, 0.34); border: 1px solid rgba(24, 27, 32, 0.14); border-radius: 999px; font-size: 13px; padding: 3px 8px; }
     .status { align-items: center; color: rgba(25, 28, 34, 0.7); display: flex; gap: 9px; min-height: 44px; }
     .spinner { animation: spin 0.8s linear infinite; border: 2px solid rgba(20, 23, 28, 0.16); border-radius: 50%; border-top-color: #181b20; height: 17px; width: 17px; }
     .error { background: rgba(255, 230, 226, 0.46); border: 1px solid rgba(126, 34, 27, 0.16); border-radius: 10px; color: #6e211a; padding: 12px; }

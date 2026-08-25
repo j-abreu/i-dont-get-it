@@ -19,9 +19,9 @@ describe('mountExplanationCard', () => {
   });
 
   it('renders loading and success inside an isolated shadow root', async () => {
-    const explain = vi.fn<ExplanationProvider>().mockResolvedValue({
-      text: 'A contextual explanation.',
-    });
+    const explain = vi.fn<ExplanationProvider>().mockResolvedValue(
+      structured('A standalone definition.', 'A contextual explanation.', ['representation']),
+    );
     const controller = mountExplanationCard({
       document,
       snapshot: createSnapshot(),
@@ -36,7 +36,11 @@ describe('mountExplanationCard', () => {
 
     await controller.settled;
 
-    expect(shadow.querySelector('.explanation')?.textContent).toBe('A contextual explanation.');
+    expect(shadow.querySelector('.definition p')?.textContent).toBe('A standalone definition.');
+    expect(shadow.querySelector('.contextual-meaning p')?.textContent).toBe(
+      'A contextual explanation.',
+    );
+    expect(shadow.querySelector('.synonyms')?.textContent).toContain('representation');
     expect(shadow.querySelector('.brand')?.textContent).toBe('Now you get it!');
     expect(shadow.querySelector('.eyebrow')?.textContent).toBe('Simple explanation');
     expect(shadow.querySelector('.beginner-action')?.textContent).toBe("Explain Like I'm 5");
@@ -50,7 +54,7 @@ describe('mountExplanationCard', () => {
     const explain = vi
       .fn<ExplanationProvider>()
       .mockRejectedValueOnce(new Error('temporary failure'))
-      .mockResolvedValueOnce({ text: 'Recovered explanation.' });
+      .mockResolvedValueOnce(structured('Recovered explanation.'));
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const controller = mountExplanationCard({
       document,
@@ -68,14 +72,14 @@ describe('mountExplanationCard', () => {
 
     expect(explain).toHaveBeenCalledTimes(2);
     expect(explain).toHaveBeenLastCalledWith(createSnapshot(), { level: 'simple' });
-    expect(shadow.querySelector('.explanation')?.textContent).toBe('Recovered explanation.');
+    expect(shadow.querySelector('.definition p')?.textContent).toBe('Recovered explanation.');
   });
 
   it('replaces a simple explanation with a detailed explanation on request', async () => {
     const detailed = deferredExplanation();
     const explain = vi
       .fn<ExplanationProvider>()
-      .mockResolvedValueOnce({ text: 'Simple answer.' })
+      .mockResolvedValueOnce(structured('Simple answer.'))
       .mockImplementationOnce(() => detailed.promise);
     const snapshot = createSnapshot();
     const controller = mountExplanationCard({ document, snapshot, explain });
@@ -86,16 +90,16 @@ describe('mountExplanationCard', () => {
     action.click();
     action.click();
 
-    expect(shadow.querySelector('.explanation')?.textContent).toBe('Simple answer.');
+    expect(shadow.querySelector('.definition p')?.textContent).toBe('Simple answer.');
     expect(shadow.querySelector<HTMLButtonElement>('.detail-action')?.disabled).toBe(true);
     expect(shadow.querySelector('.detail-action')?.textContent).toBe('Expanding…');
     expect(explain).toHaveBeenCalledTimes(2);
     expect(explain).toHaveBeenLastCalledWith(snapshot, { level: 'detailed' });
 
-    detailed.resolve({ text: 'Detailed answer with more context.' });
+    detailed.resolve(structured('Detailed answer with more context.'));
     await waitForMicrotasks();
 
-    expect(shadow.querySelector('.explanation')?.textContent).toBe(
+    expect(shadow.querySelector('.definition p')?.textContent).toBe(
       'Detailed answer with more context.',
     );
     expect(shadow.querySelector('.eyebrow')?.textContent).toBe('Detailed explanation');
@@ -110,7 +114,7 @@ describe('mountExplanationCard', () => {
     const detailed = deferredExplanation();
     const explain = vi
       .fn<ExplanationProvider>()
-      .mockResolvedValueOnce({ text: 'Simple answer.' })
+      .mockResolvedValueOnce(structured('Simple answer.'))
       .mockImplementationOnce(() => beginner.promise)
       .mockImplementationOnce(() => detailed.promise);
     const snapshot = createSnapshot();
@@ -124,7 +128,7 @@ describe('mountExplanationCard', () => {
     beginnerAction.click();
     detailedAction.click();
 
-    expect(shadow.querySelector('.explanation')?.textContent).toBe('Simple answer.');
+    expect(shadow.querySelector('.definition p')?.textContent).toBe('Simple answer.');
     expect(shadow.querySelector<HTMLButtonElement>('.beginner-action')?.disabled).toBe(true);
     expect(shadow.querySelector<HTMLButtonElement>('.detail-action')?.disabled).toBe(true);
     expect(shadow.querySelector('.beginner-action')?.textContent).toBe('Simplifying…');
@@ -135,10 +139,10 @@ describe('mountExplanationCard', () => {
     expect(explain).toHaveBeenCalledTimes(2);
     expect(explain).toHaveBeenLastCalledWith(snapshot, { level: 'beginner' });
 
-    beginner.resolve({ text: 'A very easy explanation.' });
+    beginner.resolve(structured('A very easy explanation.'));
     await waitForMicrotasks();
 
-    expect(shadow.querySelector('.explanation')?.textContent).toBe('A very easy explanation.');
+    expect(shadow.querySelector('.definition p')?.textContent).toBe('A very easy explanation.');
     expect(shadow.querySelector('.eyebrow')?.textContent).toBe(
       'Beginner-friendly explanation',
     );
@@ -149,14 +153,14 @@ describe('mountExplanationCard', () => {
 
     shadow.querySelector<HTMLButtonElement>('.detail-action')!.click();
 
-    expect(shadow.querySelector('.explanation')?.textContent).toBe('A very easy explanation.');
+    expect(shadow.querySelector('.definition p')?.textContent).toBe('A very easy explanation.');
     expect(shadow.querySelector('.detail-action')?.textContent).toBe('Expanding…');
     expect(explain).toHaveBeenLastCalledWith(snapshot, { level: 'detailed' });
 
-    detailed.resolve({ text: 'A more complete explanation.' });
+    detailed.resolve(structured('A more complete explanation.'));
     await waitForMicrotasks();
 
-    expect(shadow.querySelector('.explanation')?.textContent).toBe(
+    expect(shadow.querySelector('.definition p')?.textContent).toBe(
       'A more complete explanation.',
     );
     expect(shadow.querySelector('.eyebrow')?.textContent).toBe('Detailed explanation');
@@ -167,9 +171,9 @@ describe('mountExplanationCard', () => {
   it('keeps the simple answer visible when expansion fails and supports retry', async () => {
     const explain = vi
       .fn<ExplanationProvider>()
-      .mockResolvedValueOnce({ text: 'Simple answer stays visible.' })
+      .mockResolvedValueOnce(structured('Simple answer stays visible.'))
       .mockRejectedValueOnce(new Error('detail failure'))
-      .mockResolvedValueOnce({ text: 'Detailed answer after retry.' });
+      .mockResolvedValueOnce(structured('Detailed answer after retry.'));
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const controller = mountExplanationCard({ document, snapshot: createSnapshot(), explain });
     await controller.settled;
@@ -178,7 +182,7 @@ describe('mountExplanationCard', () => {
     shadow.querySelector<HTMLButtonElement>('.detail-action')!.click();
     await waitForMicrotasks();
 
-    expect(shadow.querySelector('.explanation')?.textContent).toBe('Simple answer stays visible.');
+    expect(shadow.querySelector('.definition p')?.textContent).toBe('Simple answer stays visible.');
     expect(shadow.querySelector('[role="alert"]')?.textContent).toContain(
       'detailed explanation could not be prepared',
     );
@@ -187,7 +191,7 @@ describe('mountExplanationCard', () => {
     await waitForMicrotasks();
 
     expect(explain).toHaveBeenCalledTimes(3);
-    expect(shadow.querySelector('.explanation')?.textContent).toBe('Detailed answer after retry.');
+    expect(shadow.querySelector('.definition p')?.textContent).toBe('Detailed answer after retry.');
     expect(shadow.querySelector('.eyebrow')?.textContent).toBe('Detailed explanation');
   });
 
@@ -195,7 +199,7 @@ describe('mountExplanationCard', () => {
     const detailed = deferredExplanation();
     const firstExplain = vi
       .fn<ExplanationProvider>()
-      .mockResolvedValueOnce({ text: 'First simple answer.' })
+      .mockResolvedValueOnce(structured('First simple answer.'))
       .mockImplementationOnce(() => detailed.promise);
     const first = mountExplanationCard({ document, snapshot: createSnapshot(), explain: firstExplain });
     await first.settled;
@@ -204,26 +208,26 @@ describe('mountExplanationCard', () => {
     const second = mountExplanationCard({
       document,
       snapshot: { ...createSnapshot(), selectedText: 'new selection' },
-      explain: vi.fn<ExplanationProvider>().mockResolvedValue({ text: 'New answer.' }),
+      explain: vi.fn<ExplanationProvider>().mockResolvedValue(structured('New answer.')),
     });
     await second.settled;
-    detailed.resolve({ text: 'Stale detailed answer.' });
+    detailed.resolve(structured('Stale detailed answer.'));
     await waitForMicrotasks();
 
     expect(first.host.isConnected).toBe(false);
-    expect(second.host.shadowRoot?.querySelector('.explanation')?.textContent).toBe('New answer.');
+    expect(second.host.shadowRoot?.querySelector('.definition p')?.textContent).toBe('New answer.');
   });
 
   it('replaces an existing card instead of duplicating the host', async () => {
     const first = mountExplanationCard({
       document,
       snapshot: createSnapshot(),
-      explain: vi.fn<ExplanationProvider>().mockResolvedValue({ text: 'First' }),
+      explain: vi.fn<ExplanationProvider>().mockResolvedValue(structured('First')),
     });
     const second = mountExplanationCard({
       document,
       snapshot: { ...createSnapshot(), selectedText: 'second selection' },
-      explain: vi.fn<ExplanationProvider>().mockResolvedValue({ text: 'Second' }),
+      explain: vi.fn<ExplanationProvider>().mockResolvedValue(structured('Second')),
     });
     await second.settled;
 
@@ -335,6 +339,14 @@ function createSnapshot(): SelectionSnapshot {
       language: 'en',
     },
   };
+}
+
+function structured(
+  definition: string,
+  contextualMeaning = 'Meaning in this context.',
+  synonyms: string[] = [],
+) {
+  return { definition, contextualMeaning, synonyms };
 }
 
 type TestAnchorRect = {

@@ -4,6 +4,8 @@ import {
   EXPLANATION_CONTRACT_VERSION,
   isExplainRequest,
   isExplainResponse,
+  isStructuredExplanation,
+  STRUCTURED_EXPLANATION_JSON_SCHEMA,
 } from '../src/index.js';
 
 describe('explanation contracts', () => {
@@ -18,7 +20,7 @@ describe('explanation contracts', () => {
   });
 
   it('rejects unknown versions, levels, and oversized selections', () => {
-    expect(isExplainRequest({ ...createRequest(), version: 2 })).toBe(false);
+    expect(isExplainRequest({ ...createRequest(), version: 1 })).toBe(false);
     expect(
       isExplainRequest({
         ...createRequest(),
@@ -38,7 +40,11 @@ describe('explanation contracts', () => {
       isExplainResponse({
         version: EXPLANATION_CONTRACT_VERSION,
         requestId: 'request-1',
-        explanation: { text: 'A useful explanation.' },
+        explanation: {
+          definition: 'A standalone definition.',
+          contextualMeaning: 'Its meaning in this passage.',
+          synonyms: [],
+        },
       }),
     ).toBe(true);
     expect(
@@ -47,6 +53,30 @@ describe('explanation contracts', () => {
         error: { code: 'invalid_request', message: 'Invalid request.', retryable: false },
       }),
     ).toBe(true);
+  });
+
+  it('requires the exact structured explanation shape', () => {
+    const valid = {
+      definition: 'A standalone definition.',
+      contextualMeaning: 'Its meaning in this passage.',
+      synonyms: ['alternate name'],
+    };
+
+    expect(isStructuredExplanation(valid)).toBe(true);
+    expect(isStructuredExplanation({ ...valid, synonyms: undefined })).toBe(false);
+    expect(isStructuredExplanation({ ...valid, extra: 'not allowed' })).toBe(false);
+    expect(isStructuredExplanation({ ...valid, synonyms: Array(6).fill('alias') })).toBe(false);
+    expect(isStructuredExplanation({ ...valid, definition: 'x'.repeat(1_501) })).toBe(false);
+    expect(isStructuredExplanation({ ...valid, contextualMeaning: 'x'.repeat(4_001) })).toBe(false);
+    expect(STRUCTURED_EXPLANATION_JSON_SCHEMA).toMatchObject({
+      additionalProperties: false,
+      required: ['definition', 'contextualMeaning', 'synonyms'],
+      properties: {
+        definition: { maxLength: 1_500 },
+        contextualMeaning: { maxLength: 4_000 },
+        synonyms: { maxItems: 5 },
+      },
+    });
   });
 });
 

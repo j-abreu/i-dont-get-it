@@ -10,12 +10,11 @@ import {
 
 describe('Workers AI provider', () => {
   it('sends trusted instructions and serialized page data as separate messages', async () => {
-    const run = vi.fn().mockResolvedValue({ response: '  A contextual explanation.  ' });
+    const explanation = structured('A standalone definition.', 'A contextual explanation.');
+    const run = vi.fn().mockResolvedValue({ response: explanation });
     const provider = createWorkersAiExplanationProvider({ run });
 
-    await expect(provider.explain(createRequest())).resolves.toEqual({
-      text: 'A contextual explanation.',
-    });
+    await expect(provider.explain(createRequest())).resolves.toEqual(explanation);
     expect(run).toHaveBeenCalledWith(
       WORKERS_AI_MODEL,
       expect.objectContaining({
@@ -25,6 +24,13 @@ describe('Workers AI provider', () => {
         ],
         max_tokens: 420,
         stream: false,
+        response_format: expect.objectContaining({
+          type: 'json_schema',
+          json_schema: expect.objectContaining({
+            additionalProperties: false,
+            required: ['definition', 'contextualMeaning', 'synonyms'],
+          }),
+        }),
       }),
     );
 
@@ -40,7 +46,9 @@ describe('Workers AI provider', () => {
 
   it('rejects empty output and maps quota failures', async () => {
     const emptyProvider = createWorkersAiExplanationProvider({
-      run: vi.fn().mockResolvedValue({ response: '   ' }),
+      run: vi.fn().mockResolvedValue({
+        response: { definition: '', contextualMeaning: '', synonyms: [] },
+      }),
     } as WorkersAiBinding);
     const limitedProvider = createWorkersAiExplanationProvider({
       run: vi.fn().mockRejectedValue({ status: 429 }),
@@ -57,7 +65,9 @@ describe('Workers AI provider', () => {
   });
 
   it('uses beginner guidance without exposing the UI button label', async () => {
-    const run = vi.fn().mockResolvedValue({ response: 'A very easy explanation.' });
+    const run = vi.fn().mockResolvedValue({
+      response: structured('A very easy definition.', 'A very easy explanation.'),
+    });
     const provider = createWorkersAiExplanationProvider({ run });
 
     await provider.explain(createRequest('beginner'));
@@ -90,4 +100,8 @@ function createRequest(
     },
     preferences: { level, responseLanguage: 'en-US' },
   };
+}
+
+function structured(definition: string, contextualMeaning: string) {
+  return { definition, contextualMeaning, synonyms: [] };
 }

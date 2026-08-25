@@ -21,7 +21,11 @@ describe('API', () => {
 
   it('validates and explains a request through the provider boundary', async () => {
     const provider: ExplanationProvider = {
-      explain: vi.fn().mockResolvedValue({ text: 'A server-generated explanation.' }),
+      explain: vi.fn().mockResolvedValue({
+        definition: 'A server-generated definition.',
+        contextualMeaning: 'A server-generated contextual meaning.',
+        synonyms: [],
+      }),
     };
     const app = track(buildApp({ provider }));
     const response = await app.inject({ method: 'POST', url: '/explain', payload: createRequest() });
@@ -29,7 +33,11 @@ describe('API', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toMatchObject({
       version: EXPLANATION_CONTRACT_VERSION,
-      explanation: { text: 'A server-generated explanation.' },
+      explanation: {
+        definition: 'A server-generated definition.',
+        contextualMeaning: 'A server-generated contextual meaning.',
+        synonyms: [],
+      },
     });
     expect(provider.explain).toHaveBeenCalledWith(createRequest());
   });

@@ -1,10 +1,8 @@
-import type { ExplanationLevel } from '@i-dont-get-it/contracts';
+import type { ExplanationLevel, StructuredExplanation } from '@i-dont-get-it/contracts';
 
 import type { SelectionSnapshot } from '../shared/selection';
 
-export type Explanation = {
-  text: string;
-};
+export type Explanation = StructuredExplanation;
 
 export type ExplanationRequestOptions = {
   level: ExplanationLevel;
