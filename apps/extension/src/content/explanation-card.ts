@@ -197,13 +197,13 @@ async function requestExplanation(
   close: () => void,
 ): Promise<void> {
   try {
-    const explanation = await options.explain(options.snapshot);
+    const explanation = await options.explain(options.snapshot, { level: 'simple' });
 
     if (!card.isConnected) {
       return;
     }
 
-    renderSuccess(card, options.snapshot, explanation.text, close);
+    renderSimpleSuccess(card, options, explanation.text, close);
   } catch (error: unknown) {
     if (!card.isConnected) {
       return;
@@ -214,7 +214,7 @@ async function requestExplanation(
       void requestExplanation(card, options, close);
     });
 
-    console.warn('i-dont-get-it mock explanation failed', error);
+    console.warn('i-dont-get-it explanation failed', error);
   }
 }
 
@@ -232,21 +232,100 @@ function renderLoading(card: HTMLElement, snapshot: SelectionSnapshot, close: ()
   card.append(status);
 }
 
-function renderSuccess(
+function renderSimpleSuccess(
+  card: HTMLElement,
+  options: MountExplanationCardOptions,
+  simpleExplanation: string,
+  close: () => void,
+): void {
+  let detailedRequestPending = false;
+
+  const requestDetailedExplanation = async (): Promise<void> => {
+    if (detailedRequestPending || !card.isConnected) {
+      return;
+    }
+
+    detailedRequestPending = true;
+    renderExplanation(
+      card,
+      options.snapshot,
+      simpleExplanation,
+      'Simple explanation',
+      close,
+      { status: 'loading' },
+    );
+
+    try {
+      const detailedExplanation = await options.explain(options.snapshot, { level: 'detailed' });
+
+      if (!card.isConnected) {
+        return;
+      }
+
+      renderExplanation(
+        card,
+        options.snapshot,
+        detailedExplanation.text,
+        'Detailed explanation',
+        close,
+      );
+    } catch (error: unknown) {
+      if (!card.isConnected) {
+        return;
+      }
+
+      detailedRequestPending = false;
+      renderExplanation(
+        card,
+        options.snapshot,
+        simpleExplanation,
+        'Simple explanation',
+        close,
+        { status: 'error', retry: () => void requestDetailedExplanation() },
+      );
+
+      console.warn('i-dont-get-it detailed explanation failed', error);
+    }
+  };
+
+  renderExplanation(
+    card,
+    options.snapshot,
+    simpleExplanation,
+    'Simple explanation',
+    close,
+    { status: 'ready', request: () => void requestDetailedExplanation() },
+  );
+}
+
+type DetailControl =
+  | { status: 'ready'; request: () => void }
+  | { status: 'loading' }
+  | { status: 'error'; retry: () => void };
+
+function renderExplanation(
   card: HTMLElement,
   snapshot: SelectionSnapshot,
   explanation: string,
+  explanationLabel: string,
   close: () => void,
+  detailControl?: DetailControl,
 ): void {
   renderShell(card, snapshot, close, 'Now you get it!');
 
   const label = card.ownerDocument.createElement('p');
   label.className = 'eyebrow';
-  label.textContent = 'Prototype explanation';
+  label.textContent = explanationLabel;
 
   const text = card.ownerDocument.createElement('p');
   text.className = 'explanation';
   text.textContent = explanation;
+
+  card.append(label, text);
+
+  if (detailControl !== undefined) {
+    card.append(createDetailControl(card.ownerDocument, detailControl));
+  }
 
   const details = card.ownerDocument.createElement('details');
   details.className = 'context';
@@ -256,7 +335,50 @@ function renderSuccess(
   contextText.textContent = formatContext(snapshot);
   details.append(summary, contextText);
 
-  card.append(label, text, details);
+  card.append(details);
+}
+
+function createDetailControl(document: Document, detailControl: DetailControl): HTMLElement {
+  const container = document.createElement('div');
+  container.className = 'detail-control';
+
+  if (detailControl.status === 'error') {
+    container.classList.add('detail-control--error');
+    container.setAttribute('role', 'alert');
+
+    const message = document.createElement('p');
+    message.textContent = 'The explanation could not be expanded.';
+
+    const retryButton = createActionButton(document, 'Try again', 'detail-retry');
+    retryButton.addEventListener('click', detailControl.retry, { once: true });
+    container.append(message, retryButton);
+    return container;
+  }
+
+  const actionButton = createActionButton(
+    document,
+    detailControl.status === 'loading' ? 'Expanding…' : 'Explain in more detail',
+    'detail-action',
+  );
+
+  if (detailControl.status === 'loading') {
+    actionButton.disabled = true;
+    container.setAttribute('role', 'status');
+    container.setAttribute('aria-label', 'Preparing a detailed explanation');
+  } else {
+    actionButton.addEventListener('click', detailControl.request, { once: true });
+  }
+
+  container.append(actionButton);
+  return container;
+}
+
+function createActionButton(document: Document, text: string, className: string): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.className = className;
+  button.type = 'button';
+  button.textContent = text;
+  return button;
 }
 
 function renderError(
@@ -428,7 +550,7 @@ function createStyles(document: Document): HTMLStyleElement {
       line-height: 1; margin: -5px -5px -5px 8px; padding: 0; width: 30px;
     }
     .close:hover { background: rgba(255, 255, 255, 0.38); color: #111318; }
-    .close:focus-visible, .retry:focus-visible, summary:focus-visible { outline: 3px solid rgba(31, 35, 42, 0.62); outline-offset: 2px; }
+    .close:focus-visible, .retry:focus-visible, .detail-action:focus-visible, .detail-retry:focus-visible, summary:focus-visible { outline: 3px solid rgba(31, 35, 42, 0.62); outline-offset: 2px; }
     blockquote {
       border-left: 3px solid rgba(28, 31, 37, 0.26); color: rgba(25, 28, 34, 0.72); font-size: 13px; margin: 0 0 15px;
       max-height: 88px; overflow: auto; padding: 2px 0 2px 10px;
@@ -441,6 +563,18 @@ function createStyles(document: Document): HTMLStyleElement {
     .error p { margin: 0 0 10px; }
     .retry { background: rgba(24, 27, 32, 0.86); border: 1px solid rgba(255, 255, 255, 0.34); border-radius: 9px; color: #ffffff; cursor: pointer; font-weight: 650; padding: 7px 11px; }
     .retry:hover { background: #15181d; }
+    .detail-control { align-items: center; display: flex; margin-top: 14px; }
+    .detail-action, .detail-retry {
+      background: rgba(255, 255, 255, 0.34); border: 1px solid rgba(24, 27, 32, 0.22); border-radius: 9px;
+      color: #181b20; cursor: pointer; font-weight: 650; padding: 7px 11px;
+    }
+    .detail-action:hover, .detail-retry:hover { background: rgba(255, 255, 255, 0.58); }
+    .detail-action:disabled { cursor: wait; opacity: 0.64; }
+    .detail-control--error {
+      align-items: flex-start; background: rgba(255, 230, 226, 0.46); border: 1px solid rgba(126, 34, 27, 0.16);
+      border-radius: 10px; color: #6e211a; flex-direction: column; gap: 9px; padding: 10px;
+    }
+    .detail-control--error p { margin: 0; }
     .context { border-top: 1px solid rgba(27, 30, 36, 0.16); color: rgba(25, 28, 34, 0.66); font-size: 12px; margin-top: 16px; padding-top: 11px; }
     .context summary { border-radius: 4px; cursor: pointer; font-weight: 650; }
     .context p { margin: 9px 0 0; white-space: pre-line; }

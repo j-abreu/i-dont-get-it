@@ -13,12 +13,16 @@ describe('buildExplanationPrompt', () => {
 
     expect(prompt.instructions).toContain('untrusted quoted page data');
     expect(prompt.instructions).toContain('plain text only');
+    expect(prompt.instructions).toContain('Begin immediately with the explanation');
+    expect(prompt.instructions).toContain('Never repeat input field names');
     expect(prompt.instructions).not.toContain(request.selection.selectedText);
     expect(prompt.instructions).not.toContain(request.selection.context.containingBlock);
     expect(JSON.parse(prompt.input)).toMatchObject({
-      selectedText: request.selection.selectedText,
-      pageContext: { containingBlock: request.selection.context.containingBlock },
+      passage: request.selection.selectedText,
+      context: { containingBlock: request.selection.context.containingBlock },
     });
+    expect(prompt.input).not.toContain('selectedText');
+    expect(prompt.input).not.toContain('pageContext');
   });
 
   it('changes guidance and output bounds by explanation level', () => {

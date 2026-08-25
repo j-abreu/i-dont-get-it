@@ -10,12 +10,12 @@ import {
   type ExplainRequestMessage,
 } from '../shared/explanation-message';
 
-export const generateApiExplanation: ExplanationProvider = async (snapshot) => {
+export const generateApiExplanation: ExplanationProvider = async (snapshot, options) => {
   const request: ExplainRequest = {
     version: EXPLANATION_CONTRACT_VERSION,
     selection: snapshot,
     preferences: {
-      level: 'simple',
+      level: options.level,
       ...(snapshot.page.language === undefined
         ? {}
         : { responseLanguage: snapshot.page.language }),

@@ -17,7 +17,7 @@ describe('generateApiExplanation', () => {
     });
     vi.stubGlobal('browser', { runtime: { sendMessage } });
 
-    await expect(generateApiExplanation(createSnapshot())).resolves.toEqual({
+    await expect(generateApiExplanation(createSnapshot(), { level: 'simple' })).resolves.toEqual({
       text: 'A live-boundary explanation.',
     });
     expect(sendMessage).toHaveBeenCalledWith(
@@ -32,6 +32,27 @@ describe('generateApiExplanation', () => {
     );
   });
 
+  it('forwards a detailed explanation level without changing the selection snapshot', async () => {
+    const sendMessage = vi.fn().mockResolvedValue({
+      version: EXPLANATION_CONTRACT_VERSION,
+      requestId: 'request-2',
+      explanation: { text: 'A detailed explanation.' },
+    });
+    vi.stubGlobal('browser', { runtime: { sendMessage } });
+    const snapshot = createSnapshot();
+
+    await generateApiExplanation(snapshot, { level: 'detailed' });
+
+    expect(sendMessage).toHaveBeenCalledWith({
+      type: 'i-dont-get-it/explain',
+      request: {
+        version: EXPLANATION_CONTRACT_VERSION,
+        selection: snapshot,
+        preferences: { level: 'detailed', responseLanguage: 'en' },
+      },
+    });
+  });
+
   it('rejects public API errors so the card can render its retry state', async () => {
     vi.stubGlobal('browser', {
       runtime: {
@@ -42,7 +63,7 @@ describe('generateApiExplanation', () => {
       },
     });
 
-    await expect(generateApiExplanation(createSnapshot())).rejects.toThrow(
+    await expect(generateApiExplanation(createSnapshot(), { level: 'simple' })).rejects.toThrow(
       'did not return a usable response',
     );
   });

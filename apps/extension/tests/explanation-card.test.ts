@@ -38,8 +38,11 @@ describe('mountExplanationCard', () => {
 
     expect(shadow.querySelector('.explanation')?.textContent).toBe('A contextual explanation.');
     expect(shadow.querySelector('.brand')?.textContent).toBe('Now you get it!');
+    expect(shadow.querySelector('.eyebrow')?.textContent).toBe('Simple explanation');
+    expect(shadow.querySelector('.detail-action')?.textContent).toBe('Explain in more detail');
     expect(shadow.querySelector('blockquote')?.textContent).toContain('contextual representation');
     expect(shadow.querySelector('details')?.textContent).toContain('How models learn');
+    expect(explain).toHaveBeenCalledWith(createSnapshot(), { level: 'simple' });
   });
 
   it('renders an error and retries with the same snapshot', async () => {
@@ -63,7 +66,89 @@ describe('mountExplanationCard', () => {
     await waitForMicrotasks();
 
     expect(explain).toHaveBeenCalledTimes(2);
+    expect(explain).toHaveBeenLastCalledWith(createSnapshot(), { level: 'simple' });
     expect(shadow.querySelector('.explanation')?.textContent).toBe('Recovered explanation.');
+  });
+
+  it('replaces a simple explanation with a detailed explanation on request', async () => {
+    const detailed = deferredExplanation();
+    const explain = vi
+      .fn<ExplanationProvider>()
+      .mockResolvedValueOnce({ text: 'Simple answer.' })
+      .mockImplementationOnce(() => detailed.promise);
+    const snapshot = createSnapshot();
+    const controller = mountExplanationCard({ document, snapshot, explain });
+    await controller.settled;
+    const shadow = controller.host.shadowRoot!;
+    const action = shadow.querySelector<HTMLButtonElement>('.detail-action')!;
+
+    action.click();
+    action.click();
+
+    expect(shadow.querySelector('.explanation')?.textContent).toBe('Simple answer.');
+    expect(shadow.querySelector<HTMLButtonElement>('.detail-action')?.disabled).toBe(true);
+    expect(shadow.querySelector('.detail-action')?.textContent).toBe('Expanding…');
+    expect(explain).toHaveBeenCalledTimes(2);
+    expect(explain).toHaveBeenLastCalledWith(snapshot, { level: 'detailed' });
+
+    detailed.resolve({ text: 'Detailed answer with more context.' });
+    await waitForMicrotasks();
+
+    expect(shadow.querySelector('.explanation')?.textContent).toBe(
+      'Detailed answer with more context.',
+    );
+    expect(shadow.querySelector('.eyebrow')?.textContent).toBe('Detailed explanation');
+    expect(shadow.querySelector('.detail-control')).toBeNull();
+  });
+
+  it('keeps the simple answer visible when expansion fails and supports retry', async () => {
+    const explain = vi
+      .fn<ExplanationProvider>()
+      .mockResolvedValueOnce({ text: 'Simple answer stays visible.' })
+      .mockRejectedValueOnce(new Error('detail failure'))
+      .mockResolvedValueOnce({ text: 'Detailed answer after retry.' });
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const controller = mountExplanationCard({ document, snapshot: createSnapshot(), explain });
+    await controller.settled;
+    const shadow = controller.host.shadowRoot!;
+
+    shadow.querySelector<HTMLButtonElement>('.detail-action')!.click();
+    await waitForMicrotasks();
+
+    expect(shadow.querySelector('.explanation')?.textContent).toBe('Simple answer stays visible.');
+    expect(shadow.querySelector('[role="alert"]')?.textContent).toContain(
+      'could not be expanded',
+    );
+
+    shadow.querySelector<HTMLButtonElement>('.detail-retry')!.click();
+    await waitForMicrotasks();
+
+    expect(explain).toHaveBeenCalledTimes(3);
+    expect(shadow.querySelector('.explanation')?.textContent).toBe('Detailed answer after retry.');
+    expect(shadow.querySelector('.eyebrow')?.textContent).toBe('Detailed explanation');
+  });
+
+  it('ignores a detailed response after the card is replaced', async () => {
+    const detailed = deferredExplanation();
+    const firstExplain = vi
+      .fn<ExplanationProvider>()
+      .mockResolvedValueOnce({ text: 'First simple answer.' })
+      .mockImplementationOnce(() => detailed.promise);
+    const first = mountExplanationCard({ document, snapshot: createSnapshot(), explain: firstExplain });
+    await first.settled;
+    first.host.shadowRoot?.querySelector<HTMLButtonElement>('.detail-action')?.click();
+
+    const second = mountExplanationCard({
+      document,
+      snapshot: { ...createSnapshot(), selectedText: 'new selection' },
+      explain: vi.fn<ExplanationProvider>().mockResolvedValue({ text: 'New answer.' }),
+    });
+    await second.settled;
+    detailed.resolve({ text: 'Stale detailed answer.' });
+    await waitForMicrotasks();
+
+    expect(first.host.isConnected).toBe(false);
+    expect(second.host.shadowRoot?.querySelector('.explanation')?.textContent).toBe('New answer.');
   });
 
   it('replaces an existing card instead of duplicating the host', async () => {
@@ -215,4 +300,16 @@ const pendingExplanation: ExplanationProvider = () => new Promise(() => undefine
 async function waitForMicrotasks(): Promise<void> {
   await Promise.resolve();
   await Promise.resolve();
+}
+
+function deferredExplanation(): {
+  promise: ReturnType<ExplanationProvider>;
+  resolve: (value: Awaited<ReturnType<ExplanationProvider>>) => void;
+} {
+  let resolve!: (value: Awaited<ReturnType<ExplanationProvider>>) => void;
+  const promise = new Promise<Awaited<ReturnType<ExplanationProvider>>>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+
+  return { promise, resolve };
 }
