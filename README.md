@@ -105,6 +105,8 @@ The explanation card supports loading, close, error, and retry states and includ
 
 Development builds also log the full local snapshot—including selected text and nearby context—to make extraction behavior inspectable. Production builds log only a summary. The extension service worker sends the snapshot to the API origin selected for the build mode. Development uses the provider configured in `apps/api/.env`; deterministic mode remains the default. Production uses the deployed Cloudflare Worker and Workers AI.
 
+The shared model prompt keeps the selected passage as the subject of the answer. It derives the sentence containing the selection as immediate context, retains the surrounding blocks only as secondary evidence, and asks the model to define a term, identify a named entity, or paraphrase a longer passage before explaining its role on the page.
+
 If the API is stopped or unavailable, the card displays its existing error state and **Try again** control.
 
 Current capture limits:
