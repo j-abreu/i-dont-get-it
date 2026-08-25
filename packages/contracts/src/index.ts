@@ -1,6 +1,6 @@
 export const EXPLANATION_CONTRACT_VERSION = 1 as const;
 
-export const EXPLANATION_LEVELS = ['concise', 'simple', 'detailed'] as const;
+export const EXPLANATION_LEVELS = ['concise', 'beginner', 'simple', 'detailed'] as const;
 export type ExplanationLevel = (typeof EXPLANATION_LEVELS)[number];
 
 export type ExplanationSelectionSnapshot = {

@@ -28,9 +28,14 @@ describe('buildExplanationPrompt', () => {
 
   it('changes guidance and output bounds by explanation level', () => {
     const concise = buildExplanationPrompt(createRequest('concise'));
+    const beginner = buildExplanationPrompt(createRequest('beginner'));
     const detailed = buildExplanationPrompt(createRequest('detailed'));
 
     expect(concise.instructions).toContain('one or two short sentences');
+    expect(beginner.instructions).toContain('no prior knowledge');
+    expect(beginner.instructions).toContain('very common words and short, clear sentences');
+    expect(beginner.instructions).toContain('Avoid jargon and complicated terms');
+    expect(beginner.instructions).not.toContain("Explain Like I'm 5");
     expect(detailed.instructions).toContain('Add depth about the selected passage itself');
     expect(detailed.instructions).toContain('do not broaden into a summary');
     expect(concise.maxOutputTokens).toBeLessThan(detailed.maxOutputTokens);

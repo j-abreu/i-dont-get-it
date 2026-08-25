@@ -39,6 +39,7 @@ describe('mountExplanationCard', () => {
     expect(shadow.querySelector('.explanation')?.textContent).toBe('A contextual explanation.');
     expect(shadow.querySelector('.brand')?.textContent).toBe('Now you get it!');
     expect(shadow.querySelector('.eyebrow')?.textContent).toBe('Simple explanation');
+    expect(shadow.querySelector('.beginner-action')?.textContent).toBe("Explain Like I'm 5");
     expect(shadow.querySelector('.detail-action')?.textContent).toBe('Explain in more detail');
     expect(shadow.querySelector('blockquote')?.textContent).toContain('contextual representation');
     expect(shadow.querySelector('details')?.textContent).toContain('How models learn');
@@ -98,7 +99,45 @@ describe('mountExplanationCard', () => {
       'Detailed answer with more context.',
     );
     expect(shadow.querySelector('.eyebrow')?.textContent).toBe('Detailed explanation');
-    expect(shadow.querySelector('.detail-control')).toBeNull();
+    expect(shadow.querySelector('.refinement-control')).toBeNull();
+  });
+
+  it('replaces a simple explanation with a beginner-friendly explanation on request', async () => {
+    const beginner = deferredExplanation();
+    const explain = vi
+      .fn<ExplanationProvider>()
+      .mockResolvedValueOnce({ text: 'Simple answer.' })
+      .mockImplementationOnce(() => beginner.promise);
+    const snapshot = createSnapshot();
+    const controller = mountExplanationCard({ document, snapshot, explain });
+    await controller.settled;
+    const shadow = controller.host.shadowRoot!;
+    const beginnerAction = shadow.querySelector<HTMLButtonElement>('.beginner-action')!;
+    const detailedAction = shadow.querySelector<HTMLButtonElement>('.detail-action')!;
+
+    beginnerAction.click();
+    beginnerAction.click();
+    detailedAction.click();
+
+    expect(shadow.querySelector('.explanation')?.textContent).toBe('Simple answer.');
+    expect(shadow.querySelector<HTMLButtonElement>('.beginner-action')?.disabled).toBe(true);
+    expect(shadow.querySelector<HTMLButtonElement>('.detail-action')?.disabled).toBe(true);
+    expect(shadow.querySelector('.beginner-action')?.textContent).toBe('Simplifying…');
+    expect(shadow.querySelector('.detail-action')?.textContent).toBe('Explain in more detail');
+    expect(shadow.querySelector('.refinement-control')?.getAttribute('aria-label')).toBe(
+      'Preparing a beginner-friendly explanation',
+    );
+    expect(explain).toHaveBeenCalledTimes(2);
+    expect(explain).toHaveBeenLastCalledWith(snapshot, { level: 'beginner' });
+
+    beginner.resolve({ text: 'A very easy explanation.' });
+    await waitForMicrotasks();
+
+    expect(shadow.querySelector('.explanation')?.textContent).toBe('A very easy explanation.');
+    expect(shadow.querySelector('.eyebrow')?.textContent).toBe(
+      'Beginner-friendly explanation',
+    );
+    expect(shadow.querySelector('.refinement-control')).toBeNull();
   });
 
   it('keeps the simple answer visible when expansion fails and supports retry', async () => {
@@ -117,10 +156,10 @@ describe('mountExplanationCard', () => {
 
     expect(shadow.querySelector('.explanation')?.textContent).toBe('Simple answer stays visible.');
     expect(shadow.querySelector('[role="alert"]')?.textContent).toContain(
-      'could not be expanded',
+      'detailed explanation could not be prepared',
     );
 
-    shadow.querySelector<HTMLButtonElement>('.detail-retry')!.click();
+    shadow.querySelector<HTMLButtonElement>('.refinement-retry')!.click();
     await waitForMicrotasks();
 
     expect(explain).toHaveBeenCalledTimes(3);

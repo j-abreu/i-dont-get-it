@@ -101,7 +101,9 @@ The current **I don't get it!** action captures a selection snapshot and display
 
 The shortcut is scoped to Chrome and can be changed or restored at `chrome://extensions/shortcuts` if it conflicts with another installed extension.
 
-The explanation card supports loading, close, error, and retry states and includes a collapsible view of the context used. After a simple explanation succeeds, **Explain in more detail** makes a second request with the same bounded selection context and replaces the answer with a detailed version. If that request fails, the simple answer remains visible and can be retried. The card is isolated from page styling with Shadow DOM. Repeating the action replaces the existing card, and `Escape` closes it.
+The explanation card supports loading, close, error, and retry states and includes a collapsible view of the context used. After a simple explanation succeeds, **Explain Like I'm 5** requests an accessible explanation for a complete beginner, while **Explain in more detail** requests additional depth. Both reuse the same bounded selection context and replace the answer when successful. If a refinement fails, the simple answer remains visible and can be retried. The card is isolated from page styling with Shadow DOM. Repeating the action replaces the existing card, and `Escape` closes it.
+
+The beginner action sends only the internal explanation level `beginner`; its user-facing button text is not included in the model prompt. Beginner guidance requests common words, short sentences, immediate explanations for unavoidable terminology, and a simple example or analogy when useful—without talking down to the reader or mentioning age.
 
 Development builds also log the full local snapshot—including selected text and nearby context—to make extraction behavior inspectable. Production builds log only a summary. The extension service worker sends the snapshot to the API origin selected for the build mode. Development uses the provider configured in `apps/api/.env`; deterministic mode remains the default. Production uses the deployed Cloudflare Worker and Workers AI.
 

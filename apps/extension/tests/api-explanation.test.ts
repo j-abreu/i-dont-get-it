@@ -53,6 +53,29 @@ describe('generateApiExplanation', () => {
     });
   });
 
+  it('forwards the beginner level without sending the button label', async () => {
+    const sendMessage = vi.fn().mockResolvedValue({
+      version: EXPLANATION_CONTRACT_VERSION,
+      requestId: 'request-3',
+      explanation: { text: 'A beginner-friendly explanation.' },
+    });
+    vi.stubGlobal('browser', { runtime: { sendMessage } });
+    const snapshot = createSnapshot();
+
+    await generateApiExplanation(snapshot, { level: 'beginner' });
+
+    const serializedMessage = JSON.stringify(sendMessage.mock.calls[0]?.[0]);
+    expect(sendMessage).toHaveBeenCalledWith({
+      type: 'i-dont-get-it/explain',
+      request: {
+        version: EXPLANATION_CONTRACT_VERSION,
+        selection: snapshot,
+        preferences: { level: 'beginner', responseLanguage: 'en' },
+      },
+    });
+    expect(serializedMessage).not.toContain("Explain Like I'm 5");
+  });
+
   it('rejects public API errors so the card can render its retry state', async () => {
     vi.stubGlobal('browser', {
       runtime: {

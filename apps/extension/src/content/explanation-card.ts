@@ -238,25 +238,27 @@ function renderSimpleSuccess(
   simpleExplanation: string,
   close: () => void,
 ): void {
-  let detailedRequestPending = false;
+  let refinementRequestPending = false;
 
-  const requestDetailedExplanation = async (): Promise<void> => {
-    if (detailedRequestPending || !card.isConnected) {
+  const requestRefinement = async (refinement: Refinement): Promise<void> => {
+    if (refinementRequestPending || !card.isConnected) {
       return;
     }
 
-    detailedRequestPending = true;
+    refinementRequestPending = true;
     renderExplanation(
       card,
       options.snapshot,
       simpleExplanation,
       'Simple explanation',
       close,
-      { status: 'loading' },
+      { status: 'loading', refinement },
     );
 
     try {
-      const detailedExplanation = await options.explain(options.snapshot, { level: 'detailed' });
+      const refinedExplanation = await options.explain(options.snapshot, {
+        level: refinement.level,
+      });
 
       if (!card.isConnected) {
         return;
@@ -265,8 +267,8 @@ function renderSimpleSuccess(
       renderExplanation(
         card,
         options.snapshot,
-        detailedExplanation.text,
-        'Detailed explanation',
+        refinedExplanation.text,
+        refinement.successLabel,
         close,
       );
     } catch (error: unknown) {
@@ -274,17 +276,17 @@ function renderSimpleSuccess(
         return;
       }
 
-      detailedRequestPending = false;
+      refinementRequestPending = false;
       renderExplanation(
         card,
         options.snapshot,
         simpleExplanation,
         'Simple explanation',
         close,
-        { status: 'error', retry: () => void requestDetailedExplanation() },
+        { status: 'error', refinement, retry: () => void requestRefinement(refinement) },
       );
 
-      console.warn('i-dont-get-it detailed explanation failed', error);
+      console.warn(`i-dont-get-it ${refinement.level} explanation failed`, error);
     }
   };
 
@@ -294,14 +296,35 @@ function renderSimpleSuccess(
     simpleExplanation,
     'Simple explanation',
     close,
-    { status: 'ready', request: () => void requestDetailedExplanation() },
+    { status: 'ready', request: (refinement) => void requestRefinement(refinement) },
   );
 }
 
-type DetailControl =
-  | { status: 'ready'; request: () => void }
-  | { status: 'loading' }
-  | { status: 'error'; retry: () => void };
+const REFINEMENTS = [
+  {
+    level: 'beginner',
+    actionLabel: "Explain Like I'm 5",
+    loadingLabel: 'Simplifying…',
+    successLabel: 'Beginner-friendly explanation',
+    errorMessage: 'The beginner-friendly explanation could not be prepared.',
+    className: 'beginner-action',
+  },
+  {
+    level: 'detailed',
+    actionLabel: 'Explain in more detail',
+    loadingLabel: 'Expanding…',
+    successLabel: 'Detailed explanation',
+    errorMessage: 'The detailed explanation could not be prepared.',
+    className: 'detail-action',
+  },
+] as const;
+
+type Refinement = (typeof REFINEMENTS)[number];
+
+type RefinementControl =
+  | { status: 'ready'; request: (refinement: Refinement) => void }
+  | { status: 'loading'; refinement: Refinement }
+  | { status: 'error'; refinement: Refinement; retry: () => void };
 
 function renderExplanation(
   card: HTMLElement,
@@ -309,7 +332,7 @@ function renderExplanation(
   explanation: string,
   explanationLabel: string,
   close: () => void,
-  detailControl?: DetailControl,
+  refinementControl?: RefinementControl,
 ): void {
   renderShell(card, snapshot, close, 'Now you get it!');
 
@@ -323,8 +346,8 @@ function renderExplanation(
 
   card.append(label, text);
 
-  if (detailControl !== undefined) {
-    card.append(createDetailControl(card.ownerDocument, detailControl));
+  if (refinementControl !== undefined) {
+    card.append(createRefinementControl(card.ownerDocument, refinementControl));
   }
 
   const details = card.ownerDocument.createElement('details');
@@ -338,38 +361,55 @@ function renderExplanation(
   card.append(details);
 }
 
-function createDetailControl(document: Document, detailControl: DetailControl): HTMLElement {
+function createRefinementControl(
+  document: Document,
+  refinementControl: RefinementControl,
+): HTMLElement {
   const container = document.createElement('div');
-  container.className = 'detail-control';
+  container.className = 'refinement-control';
 
-  if (detailControl.status === 'error') {
-    container.classList.add('detail-control--error');
+  if (refinementControl.status === 'error') {
+    container.classList.add('refinement-control--error');
     container.setAttribute('role', 'alert');
 
     const message = document.createElement('p');
-    message.textContent = 'The explanation could not be expanded.';
+    message.textContent = refinementControl.refinement.errorMessage;
 
-    const retryButton = createActionButton(document, 'Try again', 'detail-retry');
-    retryButton.addEventListener('click', detailControl.retry, { once: true });
+    const retryButton = createActionButton(document, 'Try again', 'refinement-retry');
+    retryButton.addEventListener('click', refinementControl.retry, { once: true });
     container.append(message, retryButton);
     return container;
   }
 
-  const actionButton = createActionButton(
-    document,
-    detailControl.status === 'loading' ? 'Expanding…' : 'Explain in more detail',
-    'detail-action',
-  );
+  for (const refinement of REFINEMENTS) {
+    const isActive =
+      refinementControl.status === 'loading' &&
+      refinementControl.refinement.level === refinement.level;
+    const actionButton = createActionButton(
+      document,
+      isActive ? refinement.loadingLabel : refinement.actionLabel,
+      `refinement-action ${refinement.className}`,
+    );
 
-  if (detailControl.status === 'loading') {
-    actionButton.disabled = true;
-    container.setAttribute('role', 'status');
-    container.setAttribute('aria-label', 'Preparing a detailed explanation');
-  } else {
-    actionButton.addEventListener('click', detailControl.request, { once: true });
+    if (refinementControl.status === 'loading') {
+      actionButton.disabled = true;
+    } else {
+      actionButton.addEventListener('click', () => refinementControl.request(refinement), {
+        once: true,
+      });
+    }
+
+    container.append(actionButton);
   }
 
-  container.append(actionButton);
+  if (refinementControl.status === 'loading') {
+    container.setAttribute('role', 'status');
+    container.setAttribute(
+      'aria-label',
+      `Preparing a ${refinementControl.refinement.successLabel.toLowerCase()}`,
+    );
+  }
+
   return container;
 }
 
@@ -550,7 +590,7 @@ function createStyles(document: Document): HTMLStyleElement {
       line-height: 1; margin: -5px -5px -5px 8px; padding: 0; width: 30px;
     }
     .close:hover { background: rgba(255, 255, 255, 0.38); color: #111318; }
-    .close:focus-visible, .retry:focus-visible, .detail-action:focus-visible, .detail-retry:focus-visible, summary:focus-visible { outline: 3px solid rgba(31, 35, 42, 0.62); outline-offset: 2px; }
+    .close:focus-visible, .retry:focus-visible, .refinement-action:focus-visible, .refinement-retry:focus-visible, summary:focus-visible { outline: 3px solid rgba(31, 35, 42, 0.62); outline-offset: 2px; }
     blockquote {
       border-left: 3px solid rgba(28, 31, 37, 0.26); color: rgba(25, 28, 34, 0.72); font-size: 13px; margin: 0 0 15px;
       max-height: 88px; overflow: auto; padding: 2px 0 2px 10px;
@@ -563,18 +603,18 @@ function createStyles(document: Document): HTMLStyleElement {
     .error p { margin: 0 0 10px; }
     .retry { background: rgba(24, 27, 32, 0.86); border: 1px solid rgba(255, 255, 255, 0.34); border-radius: 9px; color: #ffffff; cursor: pointer; font-weight: 650; padding: 7px 11px; }
     .retry:hover { background: #15181d; }
-    .detail-control { align-items: center; display: flex; margin-top: 14px; }
-    .detail-action, .detail-retry {
+    .refinement-control { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .refinement-action, .refinement-retry {
       background: rgba(255, 255, 255, 0.34); border: 1px solid rgba(24, 27, 32, 0.22); border-radius: 9px;
       color: #181b20; cursor: pointer; font-weight: 650; padding: 7px 11px;
     }
-    .detail-action:hover, .detail-retry:hover { background: rgba(255, 255, 255, 0.58); }
-    .detail-action:disabled { cursor: wait; opacity: 0.64; }
-    .detail-control--error {
+    .refinement-action:hover, .refinement-retry:hover { background: rgba(255, 255, 255, 0.58); }
+    .refinement-action:disabled { cursor: wait; opacity: 0.64; }
+    .refinement-control--error {
       align-items: flex-start; background: rgba(255, 230, 226, 0.46); border: 1px solid rgba(126, 34, 27, 0.16);
       border-radius: 10px; color: #6e211a; flex-direction: column; gap: 9px; padding: 10px;
     }
-    .detail-control--error p { margin: 0; }
+    .refinement-control--error p { margin: 0; }
     .context { border-top: 1px solid rgba(27, 30, 36, 0.16); color: rgba(25, 28, 34, 0.66); font-size: 12px; margin-top: 16px; padding-top: 11px; }
     .context summary { border-radius: 4px; cursor: pointer; font-weight: 650; }
     .context p { margin: 9px 0 0; white-space: pre-line; }

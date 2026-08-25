@@ -11,6 +11,11 @@ const LEVEL_GUIDANCE: Record<ExplanationLevel, { guidance: string; maxOutputToke
     guidance: 'Answer in one or two short sentences. Include only the meaning needed here.',
     maxOutputTokens: 180,
   },
+  beginner: {
+    guidance:
+      'Assume the reader has no prior knowledge of the subject. Use very common words and short, clear sentences. Avoid jargon and complicated terms; if an unfamiliar term is unavoidable, explain it immediately in everyday language. Use a simple concrete example or analogy when helpful. Do not talk down to the reader or mention their age.',
+    maxOutputTokens: 420,
+  },
   simple: {
     guidance:
       'Use a short paragraph in plain language. Explain the selected passage and its immediate contextual role without digressing into unrelated page details.',

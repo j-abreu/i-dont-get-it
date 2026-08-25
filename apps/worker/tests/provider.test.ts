@@ -55,9 +55,27 @@ describe('Workers AI provider', () => {
       retryable: true,
     } satisfies Partial<ExplanationProviderError>);
   });
+
+  it('uses beginner guidance without exposing the UI button label', async () => {
+    const run = vi.fn().mockResolvedValue({ response: 'A very easy explanation.' });
+    const provider = createWorkersAiExplanationProvider({ run });
+
+    await provider.explain(createRequest('beginner'));
+
+    const input = run.mock.calls[0]?.[1] as {
+      messages: Array<{ content: string }>;
+      max_tokens: number;
+    };
+    expect(input.messages[0]?.content).toContain('no prior knowledge');
+    expect(input.messages[0]?.content).toContain('Avoid jargon and complicated terms');
+    expect(input.messages[0]?.content).not.toContain("Explain Like I'm 5");
+    expect(input.max_tokens).toBe(420);
+  });
 });
 
-function createRequest(): ExplainRequest {
+function createRequest(
+  level: ExplainRequest['preferences']['level'] = 'simple',
+): ExplainRequest {
   return {
     version: EXPLANATION_CONTRACT_VERSION,
     selection: {
@@ -70,6 +88,6 @@ function createRequest(): ExplainRequest {
         language: 'en',
       },
     },
-    preferences: { level: 'simple', responseLanguage: 'en-US' },
+    preferences: { level, responseLanguage: 'en-US' },
   };
 }

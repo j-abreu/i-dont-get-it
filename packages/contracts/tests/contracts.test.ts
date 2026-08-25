@@ -9,6 +9,12 @@ import {
 describe('explanation contracts', () => {
   it('accepts a bounded versioned request', () => {
     expect(isExplainRequest(createRequest())).toBe(true);
+    expect(
+      isExplainRequest({
+        ...createRequest(),
+        preferences: { level: 'beginner' },
+      }),
+    ).toBe(true);
   });
 
   it('rejects unknown versions, levels, and oversized selections', () => {
