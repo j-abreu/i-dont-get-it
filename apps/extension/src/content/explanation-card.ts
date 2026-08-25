@@ -239,6 +239,9 @@ function renderSimpleSuccess(
   close: () => void,
 ): void {
   let refinementRequestPending = false;
+  let currentExplanation = simpleExplanation;
+  let currentExplanationLabel = 'Simple explanation';
+  let selectedLevel: Refinement['level'] | undefined;
 
   const requestRefinement = async (refinement: Refinement): Promise<void> => {
     if (refinementRequestPending || !card.isConnected) {
@@ -249,10 +252,10 @@ function renderSimpleSuccess(
     renderExplanation(
       card,
       options.snapshot,
-      simpleExplanation,
-      'Simple explanation',
+      currentExplanation,
+      currentExplanationLabel,
       close,
-      { status: 'loading', refinement },
+      { status: 'loading', refinement, selectedLevel },
     );
 
     try {
@@ -264,13 +267,15 @@ function renderSimpleSuccess(
         return;
       }
 
-      renderExplanation(
-        card,
-        options.snapshot,
-        refinedExplanation.text,
-        refinement.successLabel,
-        close,
-      );
+      currentExplanation = refinedExplanation.text;
+      currentExplanationLabel = refinement.successLabel;
+      selectedLevel = refinement.level;
+      refinementRequestPending = false;
+      renderExplanation(card, options.snapshot, currentExplanation, currentExplanationLabel, close, {
+        status: 'ready',
+        selectedLevel,
+        request: (nextRefinement) => void requestRefinement(nextRefinement),
+      });
     } catch (error: unknown) {
       if (!card.isConnected) {
         return;
@@ -280,10 +285,15 @@ function renderSimpleSuccess(
       renderExplanation(
         card,
         options.snapshot,
-        simpleExplanation,
-        'Simple explanation',
+        currentExplanation,
+        currentExplanationLabel,
         close,
-        { status: 'error', refinement, retry: () => void requestRefinement(refinement) },
+        {
+          status: 'error',
+          refinement,
+          selectedLevel,
+          retry: () => void requestRefinement(refinement),
+        },
       );
 
       console.warn(`i-dont-get-it ${refinement.level} explanation failed`, error);
@@ -296,7 +306,11 @@ function renderSimpleSuccess(
     simpleExplanation,
     'Simple explanation',
     close,
-    { status: 'ready', request: (refinement) => void requestRefinement(refinement) },
+    {
+      status: 'ready',
+      selectedLevel,
+      request: (refinement) => void requestRefinement(refinement),
+    },
   );
 }
 
@@ -322,9 +336,22 @@ const REFINEMENTS = [
 type Refinement = (typeof REFINEMENTS)[number];
 
 type RefinementControl =
-  | { status: 'ready'; request: (refinement: Refinement) => void }
-  | { status: 'loading'; refinement: Refinement }
-  | { status: 'error'; refinement: Refinement; retry: () => void };
+  | {
+      status: 'ready';
+      selectedLevel: Refinement['level'] | undefined;
+      request: (refinement: Refinement) => void;
+    }
+  | {
+      status: 'loading';
+      refinement: Refinement;
+      selectedLevel: Refinement['level'] | undefined;
+    }
+  | {
+      status: 'error';
+      refinement: Refinement;
+      selectedLevel: Refinement['level'] | undefined;
+      retry: () => void;
+    };
 
 function renderExplanation(
   card: HTMLElement,
@@ -385,13 +412,15 @@ function createRefinementControl(
     const isActive =
       refinementControl.status === 'loading' &&
       refinementControl.refinement.level === refinement.level;
+    const isSelected = refinementControl.selectedLevel === refinement.level;
     const actionButton = createActionButton(
       document,
       isActive ? refinement.loadingLabel : refinement.actionLabel,
       `refinement-action ${refinement.className}`,
     );
+    actionButton.setAttribute('aria-pressed', String(isSelected));
 
-    if (refinementControl.status === 'loading') {
+    if (refinementControl.status === 'loading' || isSelected) {
       actionButton.disabled = true;
     } else {
       actionButton.addEventListener('click', () => refinementControl.request(refinement), {
