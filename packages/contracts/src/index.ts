@@ -48,7 +48,7 @@ export const STRUCTURED_EXPLANATION_JSON_SCHEMA = {
       type: ['string', 'null'],
       maxLength: 1_500,
       description:
-        'Explain or identify only the exact selected passage on its own when it has a stable standalone meaning. Return null for a complete claim, classification, relationship, or fragment where a definition would merely restate the selection or be misleading.',
+        'Use a string only for a standalone term, named entity, idiom, formula, or short conceptual phrase. MUST return null for every complete claim, classification, relationship, sentence, paragraph, or fragment, including a statement that could be paraphrased.',
     },
     contextualMeaning: {
       type: 'string',

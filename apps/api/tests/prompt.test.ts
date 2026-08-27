@@ -40,6 +40,8 @@ describe('buildExplanationPrompt', () => {
     const prompt = buildExplanationPrompt(createRequest());
 
     expect(prompt.instructions).toContain('stable standalone meaning');
+    expect(prompt.instructions).toContain('definition MUST be the JSON value null');
+    expect(prompt.instructions).toContain('even when it does not end with punctuation');
     expect(prompt.instructions).toContain('Return definition as null');
     expect(prompt.instructions).toContain('classification, relationship, sentence, paragraph, or fragment');
     expect(prompt.instructions).toContain('say so instead of guessing');
@@ -87,7 +89,7 @@ describe('buildExplanationPrompt', () => {
     const prompt = buildExplanationPrompt(createRequest());
 
     expect(prompt.instructions.length).toBeLessThan(3_300);
-    expect(prompt.version).toBe('2026-08-27-v3');
+    expect(prompt.version).toBe('2026-08-27-v4');
   });
 });
 

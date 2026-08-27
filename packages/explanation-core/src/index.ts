@@ -1,6 +1,6 @@
 import type { ExplainRequest, ExplanationLevel } from '@i-dont-get-it/contracts';
 
-export const EXPLANATION_PROMPT_VERSION = '2026-08-27-v3' as const;
+export const EXPLANATION_PROMPT_VERSION = '2026-08-27-v4' as const;
 
 export type ExplanationPrompt = {
   instructions: string;
@@ -30,7 +30,7 @@ const LEVEL_GUIDANCE: Record<ExplanationLevel, { guidance: string; maxOutputToke
   },
   detailed: {
     guidance: [
-      'Give a thorough but focused definition.',
+      'When definition is present, make it thorough but focused.',
       'Explain relevant relationships, implications, or contrasts in the immediate context.',
       'Include useful background and one clarifying example when appropriate.',
       'Do not broaden into a summary of the page.',
@@ -47,10 +47,16 @@ Help a reader understand exactly the passage they selected without interrupting 
 
 Explain only the exact value in passage. Context is evidence for interpreting that passage, not a replacement subject and not material to summarize.
 
+# Definition gate — mandatory
+
+Decide the value of definition before writing any prose. If passage expresses a complete thought, assertion, classification, relationship, cause, comparison, or other proposition, definition MUST be the JSON value null. This rule applies even when the passage could be paraphrased clearly and even when it does not end with punctuation.
+
+Never put a paraphrase, restatement, summary, or wording such as “this sentence means” in definition. Those belong only in contextualMeaning. A string definition is allowed only when passage itself is a standalone term, named entity, idiom, formula, or short conceptual phrase. When definition is null, synonyms MUST be an empty array.
+
 # Success criteria
 
 - definition explains or identifies passage on its own only when it has a stable standalone meaning, such as a term, named entity, idiom, formula, or short conceptual phrase.
-- Return definition as null, and synonyms as an empty array, for a complete claim, classification, relationship, sentence, paragraph, or fragment when a definition would merely paraphrase the selection, repeat it, or create a misleading artificial label. Do not turn a statement into a definition.
+- Return definition as null, and synonyms as an empty array, for a complete claim, classification, relationship, sentence, paragraph, or fragment. Do not turn a statement into a definition.
 - contextualMeaning explains what passage means, refers to, qualifies, or contributes specifically in context.immediate. It adds information rather than repeating definition.
 - synonyms contains only reliable substitutes, aliases, abbreviations, or alternate names for a term, short phrase, or named entity. Use an empty array for sentences, paragraphs, ambiguous fragments, or when no genuine alternative exists.
 - A recognizable term or entity may be identified using stable general knowledge. If its identity or intended sense is uncertain, say so instead of guessing.

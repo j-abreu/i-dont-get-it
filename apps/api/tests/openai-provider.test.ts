@@ -19,7 +19,7 @@ describe('OpenAI explanation provider', () => {
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         model: 'configured-model',
-        metadata: { prompt_version: '2026-08-27-v3' },
+        metadata: { prompt_version: '2026-08-27-v4' },
         reasoning: { effort: 'none' },
         store: false,
         text: {
