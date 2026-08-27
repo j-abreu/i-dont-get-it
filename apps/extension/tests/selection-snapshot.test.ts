@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import {
   captureSelectionSnapshot,
-  sanitizePageUrl,
+  extractPageHostname,
 } from '../src/content/selection-snapshot';
 import { MAX_SELECTION_CHARACTERS } from '../src/shared/selection';
 
@@ -37,6 +37,7 @@ describe('captureSelectionSnapshot', () => {
       snapshot: {
         selectedText: 'contextual representation',
         context: {
+          immediate: 'A model learns a contextual representation from examples.',
           heading: 'How models learn',
           containingBlock: 'A model learns a contextual representation from examples.',
           before: 'The paragraph before introduces the subject.',
@@ -44,12 +45,29 @@ describe('captureSelectionSnapshot', () => {
         },
         page: {
           title: 'Contextual article',
-          url: 'https://example.com/articles/models',
           hostname: 'example.com',
           language: 'en',
         },
       },
     });
+  });
+
+  it('captures the sentence containing the exact selected occurrence', () => {
+    document.body.innerHTML = `
+      <p id="target">Cache is discussed first. This cache is the selected occurrence. Cache appears again.</p>
+    `;
+    const node = document.querySelector('#target')!.firstChild!;
+    const occurrence = node.textContent!.indexOf('cache');
+    selectRange(node, occurrence, node, occurrence + 'cache'.length);
+
+    const result = captureSelectionSnapshot(createOptions());
+
+    expect(result.status).toBe('captured');
+    if (result.status === 'captured') {
+      expect(result.snapshot.context.immediate).toBe(
+        'This cache is the selected occurrence.',
+      );
+    }
   });
 
   it('captures selections spanning multiple blocks', () => {
@@ -70,6 +88,9 @@ describe('captureSelectionSnapshot', () => {
       expect(result.snapshot.selectedText).toContain('First paragraph text.');
       expect(result.snapshot.selectedText).toContain('Second paragraph text.');
       expect(result.snapshot.context.containingBlock).toBe(
+        'First paragraph text.\n\nSecond paragraph text.',
+      );
+      expect(result.snapshot.context.immediate).toBe(
         'First paragraph text.\n\nSecond paragraph text.',
       );
       expect(result.snapshot.context.after).toBe('Following paragraph.');
@@ -190,6 +211,7 @@ describe('captureSelectionSnapshot', () => {
       snapshot: {
         selectedText: 'An editable contextual phrase.',
         context: {
+          immediate: 'An editable contextual phrase.',
           heading: 'Draft notes',
           containingBlock: 'An editable contextual phrase.',
         },
@@ -212,11 +234,29 @@ describe('captureSelectionSnapshot', () => {
       snapshot: {
         selectedText: 'selected here',
         context: {
+          immediate: 'Text selected here should be explainable because it is editable.',
           heading: 'Editable sample',
           containingBlock: 'Text selected here should be explainable because it is editable.',
         },
       },
     });
+  });
+
+  it('uses text-control offsets to capture immediate context', () => {
+    document.body.innerHTML = `
+      <textarea id="editor">Term appears first. The selected term has this meaning. Term appears last.</textarea>
+    `;
+    const editor = document.querySelector<HTMLTextAreaElement>('#editor')!;
+    const start = editor.value.indexOf('term');
+    editor.focus();
+    editor.setSelectionRange(start, start + 'term'.length);
+
+    const result = captureSelectionSnapshot(createOptions());
+
+    expect(result.status).toBe('captured');
+    if (result.status === 'captured') {
+      expect(result.snapshot.context.immediate).toBe('The selected term has this meaning.');
+    }
   });
 
   it('still rejects password and oversized selections', () => {
@@ -240,12 +280,11 @@ describe('captureSelectionSnapshot', () => {
   });
 });
 
-describe('sanitizePageUrl', () => {
-  it('removes credentials, query parameters, and fragments', () => {
-    expect(sanitizePageUrl('https://user:secret@example.com/article?q=private#section')).toEqual({
-      url: 'https://example.com/article',
-      hostname: 'example.com',
-    });
+describe('extractPageHostname', () => {
+  it('keeps only the hostname from page URLs', () => {
+    expect(extractPageHostname('https://user:secret@example.com/article?q=private#section')).toBe(
+      'example.com',
+    );
   });
 });
 

@@ -20,6 +20,7 @@ export type ResponsesClient = {
         content: Array<{ type: 'input_text'; text: string }>;
       }>;
       max_output_tokens: number;
+      metadata: { prompt_version: string };
       reasoning: { effort: 'none' | 'minimal' };
       store: false;
       text: {
@@ -69,6 +70,7 @@ export function createOpenAIExplanationProvider(
             },
           ],
           max_output_tokens: prompt.maxOutputTokens,
+          metadata: { prompt_version: prompt.version },
           reasoning: { effort: reasoningEffort },
           store: false,
           text: {

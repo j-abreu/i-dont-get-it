@@ -20,11 +20,26 @@ describe('explanation contracts', () => {
   });
 
   it('rejects unknown versions, levels, and oversized selections', () => {
-    expect(isExplainRequest({ ...createRequest(), version: 1 })).toBe(false);
+    expect(isExplainRequest({ ...createRequest(), version: 2 })).toBe(false);
     expect(
       isExplainRequest({
         ...createRequest(),
         preferences: { level: 'academic' },
+      }),
+    ).toBe(false);
+    expect(
+      isExplainRequest({
+        ...createRequest(),
+        selection: {
+          ...createRequest().selection,
+          page: { ...createRequest().selection.page, url: 'https://example.com/private-path' },
+        },
+      }),
+    ).toBe(false);
+    expect(
+      isExplainRequest({
+        ...createRequest(),
+        preferences: { level: 'concise' },
       }),
     ).toBe(false);
     expect(
@@ -85,10 +100,12 @@ function createRequest() {
     version: EXPLANATION_CONTRACT_VERSION,
     selection: {
       selectedText: 'contextual representation',
-      context: { containingBlock: 'A model learns a contextual representation.' },
+      context: {
+        immediate: 'A model learns a contextual representation.',
+        containingBlock: 'A model learns a contextual representation.',
+      },
       page: {
         title: 'How models learn',
-        url: 'https://example.com/models',
         hostname: 'example.com',
         language: 'en',
       },

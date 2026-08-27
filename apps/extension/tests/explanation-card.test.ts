@@ -327,6 +327,7 @@ function createSnapshot(): SelectionSnapshot {
   return {
     selectedText: 'contextual representation',
     context: {
+      immediate: 'A model learns a contextual representation from examples.',
       heading: 'How models learn',
       containingBlock: 'A model learns a contextual representation from examples.',
       before: 'An earlier paragraph.',
@@ -334,7 +335,6 @@ function createSnapshot(): SelectionSnapshot {
     },
     page: {
       title: 'Contextual article',
-      url: 'https://example.com/article',
       hostname: 'example.com',
       language: 'en',
     },

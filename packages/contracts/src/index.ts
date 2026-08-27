@@ -1,11 +1,12 @@
-export const EXPLANATION_CONTRACT_VERSION = 2 as const;
+export const EXPLANATION_CONTRACT_VERSION = 3 as const;
 
-export const EXPLANATION_LEVELS = ['concise', 'beginner', 'simple', 'detailed'] as const;
+export const EXPLANATION_LEVELS = ['simple', 'beginner', 'detailed'] as const;
 export type ExplanationLevel = (typeof EXPLANATION_LEVELS)[number];
 
 export type ExplanationSelectionSnapshot = {
   selectedText: string;
   context: {
+    immediate: string;
     heading?: string;
     containingBlock: string;
     before?: string;
@@ -13,7 +14,6 @@ export type ExplanationSelectionSnapshot = {
   };
   page: {
     title: string;
-    url: string;
     hostname: string;
     language?: string;
   };
@@ -49,19 +49,19 @@ export const STRUCTURED_EXPLANATION_JSON_SCHEMA = {
       minLength: 1,
       maxLength: 1_500,
       description:
-        'Define or identify only the exact selected text, independently of the page. Never expand the subject to adjacent words or define a larger phrase from the context. Do not mention its use in this page or say "in this case". For a named entity, state what it is. Example: if the exact selection is "software" inside "software load balancer", define software itself, not a load balancer.',
+        'Explain or identify only the exact selected passage on its own. For a sentence or paragraph, provide a concise plain-language paraphrase. State uncertainty instead of guessing.',
     },
     contextualMeaning: {
       type: 'string',
       minLength: 1,
       maxLength: 4_000,
       description:
-        'Explain what the exact selected text means or does specifically in the supplied immediate context. Do not merely repeat or paraphrase the definition. Explain how it contributes to a larger surrounding phrase when applicable. Example: for "software" in "software load balancer", explain that the load balancer is implemented as programs rather than dedicated physical hardware. Do not summarize unrelated page content.',
+        'Explain what the exact selected passage means, refers to, qualifies, or contributes specifically in the immediate context. Add information distinct from the definition.',
     },
     synonyms: {
       type: 'array',
       description:
-        'Actively look for up to five genuine synonyms, close substitutes, aliases, abbreviations, or alternate names for the exact selected text, written in the response language. Each item must preserve the same basic meaning and grammatical category when substituted, not be a definition, subtype, broader category, related concept, or phrase that merely contains the selected text. Return an empty array only when no genuine alternative applies.',
+        'Up to five genuine substitutes, aliases, abbreviations, or alternate names for a term, short phrase, or named entity. Return an empty array for sentences, paragraphs, ambiguous fragments, and when no reliable alternative exists.',
       items: { type: 'string', minLength: 1, maxLength: 200 },
       maxItems: 5,
     },
@@ -95,7 +95,6 @@ const LIMITS = {
   contextBlock: 2_000,
   pageTitle: 500,
   language: 100,
-  url: 2_048,
   hostname: 253,
   definition: 1_500,
   contextualMeaning: 4_000,
@@ -105,14 +104,23 @@ const LIMITS = {
 } as const;
 
 export function isExplainRequest(value: unknown): value is ExplainRequest {
-  if (!isRecord(value) || value.version !== EXPLANATION_CONTRACT_VERSION) {
+  if (
+    !isRecord(value) ||
+    value.version !== EXPLANATION_CONTRACT_VERSION ||
+    !hasExactlyKeys(value, ['version', 'selection', 'preferences'])
+  ) {
     return false;
   }
 
   const selection = value.selection;
   const preferences = value.preferences;
 
-  if (!isRecord(selection) || !isRecord(preferences)) {
+  if (
+    !isRecord(selection) ||
+    !hasExactlyKeys(selection, ['selectedText', 'context', 'page']) ||
+    !isRecord(preferences) ||
+    !hasOnlyKeys(preferences, ['level', 'responseLanguage'])
+  ) {
     return false;
   }
 
@@ -122,13 +130,15 @@ export function isExplainRequest(value: unknown): value is ExplainRequest {
   return (
     isBoundedString(selection.selectedText, 1, LIMITS.selectedText) &&
     isRecord(context) &&
+    hasOnlyKeys(context, ['immediate', 'heading', 'containingBlock', 'before', 'after']) &&
+    isBoundedString(context.immediate, 1, LIMITS.contextBlock) &&
     isBoundedString(context.containingBlock, 1, LIMITS.contextBlock) &&
     isOptionalBoundedString(context.heading, LIMITS.contextBlock) &&
     isOptionalBoundedString(context.before, LIMITS.contextBlock) &&
     isOptionalBoundedString(context.after, LIMITS.contextBlock) &&
     isRecord(page) &&
+    hasOnlyKeys(page, ['title', 'hostname', 'language']) &&
     isBoundedString(page.title, 0, LIMITS.pageTitle) &&
-    isBoundedString(page.url, 0, LIMITS.url) &&
     isBoundedString(page.hostname, 0, LIMITS.hostname) &&
     isOptionalBoundedString(page.language, LIMITS.language) &&
     EXPLANATION_LEVELS.includes(preferences.level as ExplanationLevel) &&
@@ -182,6 +192,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function hasExactlyKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
   const actualKeys = Object.keys(value);
   return actualKeys.length === keys.length && keys.every((key) => key in value);
+}
+
+function hasOnlyKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
+  return Object.keys(value).every((key) => keys.includes(key));
 }
 
 function isBoundedString(value: unknown, minimum: number, maximum: number): value is string {

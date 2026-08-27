@@ -122,10 +122,12 @@ function createRequest(): ExplainRequest {
     version: EXPLANATION_CONTRACT_VERSION,
     selection: {
       selectedText: 'contextual representation',
-      context: { containingBlock: 'A model learns a contextual representation.' },
+      context: {
+        immediate: 'A model learns a contextual representation.',
+        containingBlock: 'A model learns a contextual representation.',
+      },
       page: {
         title: 'How models learn',
-        url: 'https://example.com/models',
         hostname: 'example.com',
         language: 'en',
       },

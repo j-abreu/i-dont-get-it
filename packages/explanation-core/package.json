@@ -7,12 +7,17 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "eval": "tsx evals/run.ts",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@i-dont-get-it/contracts": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "7.0.2"
+    "@types/node": "24.13.3",
+    "tsx": "4.20.6",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
   }
 }

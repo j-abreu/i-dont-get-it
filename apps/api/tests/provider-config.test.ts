@@ -12,8 +12,11 @@ describe('provider configuration', () => {
         version: EXPLANATION_CONTRACT_VERSION,
         selection: {
           selectedText: 'selected text',
-          context: { containingBlock: 'selected text in context' },
-          page: { title: 'Article', url: '', hostname: '' },
+          context: {
+            immediate: 'selected text in context',
+            containingBlock: 'selected text in context',
+          },
+          page: { title: 'Article', hostname: '' },
         },
         preferences: { level: 'simple' },
       }),

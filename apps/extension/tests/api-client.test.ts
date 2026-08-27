@@ -64,10 +64,12 @@ function createRequest(): ExplainRequest {
     version: EXPLANATION_CONTRACT_VERSION,
     selection: {
       selectedText: 'selected text',
-      context: { containingBlock: 'A paragraph with selected text.' },
+      context: {
+        immediate: 'A paragraph with selected text.',
+        containingBlock: 'A paragraph with selected text.',
+      },
       page: {
         title: 'Article',
-        url: 'https://example.com/article',
         hostname: 'example.com',
       },
     },

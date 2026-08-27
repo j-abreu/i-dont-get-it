@@ -6,7 +6,7 @@ import {
 } from '@i-dont-get-it/contracts';
 import { buildExplanationPrompt } from '@i-dont-get-it/explanation-core';
 
-export const WORKERS_AI_MODEL = '@cf/meta/llama-3.1-8b-instruct-fast' as const;
+export const WORKERS_AI_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast' as const;
 
 export type ExplanationProviderResult = StructuredExplanation;
 
@@ -64,7 +64,10 @@ export function createWorkersAiExplanationProvider(ai: WorkersAiBinding): Explan
         const explanation = extractStructuredExplanation(result);
 
         if (explanation === undefined) {
-          console.error('Workers AI returned no usable explanation.', describeResultShape(result));
+          console.error('Workers AI returned no usable explanation.', {
+            promptVersion: prompt.version,
+            ...describeResultShape(result),
+          });
           throw new ExplanationProviderError('internal_error', false);
         }
 

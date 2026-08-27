@@ -26,10 +26,12 @@ describe('handleExplainSelectionClick', () => {
           source: 'dom',
           snapshot: {
             selectedText: 'selected text',
-            context: { containingBlock: 'A paragraph with selected text.' },
+            context: {
+              immediate: 'A paragraph with selected text.',
+              containingBlock: 'A paragraph with selected text.',
+            },
             page: {
               title: 'Article',
-              url: 'https://example.com/article',
               hostname: 'example.com',
               language: 'en',
             },
@@ -67,7 +69,6 @@ describe('handleExplainSelectionClick', () => {
           message: 'Select some text before asking for an explanation.',
           page: {
             title: 'Article',
-            url: 'https://example.com/article',
             hostname: 'example.com',
           },
         },
@@ -154,7 +155,6 @@ describe('handleExplainSelectionCommand', () => {
           message: 'Select some text before asking for an explanation.',
           page: {
             title: 'Article',
-            url: 'https://example.com/article',
             hostname: 'example.com',
           },
         },
@@ -166,10 +166,12 @@ describe('handleExplainSelectionCommand', () => {
           source: 'dom',
           snapshot: {
             selectedText: 'selected iframe text',
-            context: { containingBlock: 'A paragraph with selected iframe text.' },
+            context: {
+              immediate: 'A paragraph with selected iframe text.',
+              containingBlock: 'A paragraph with selected iframe text.',
+            },
             page: {
               title: 'Embedded article',
-              url: 'https://example.com/embed',
               hostname: 'example.com',
               language: 'en',
             },

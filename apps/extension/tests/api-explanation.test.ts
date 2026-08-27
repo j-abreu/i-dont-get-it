@@ -26,7 +26,7 @@ describe('generateApiExplanation', () => {
         request: expect.objectContaining({
           version: EXPLANATION_CONTRACT_VERSION,
           selection: createSnapshot(),
-          preferences: { level: 'simple', responseLanguage: 'en' },
+          preferences: { level: 'simple' },
         }),
       }),
     );
@@ -48,7 +48,7 @@ describe('generateApiExplanation', () => {
       request: {
         version: EXPLANATION_CONTRACT_VERSION,
         selection: snapshot,
-        preferences: { level: 'detailed', responseLanguage: 'en' },
+        preferences: { level: 'detailed' },
       },
     });
   });
@@ -70,7 +70,7 @@ describe('generateApiExplanation', () => {
       request: {
         version: EXPLANATION_CONTRACT_VERSION,
         selection: snapshot,
-        preferences: { level: 'beginner', responseLanguage: 'en' },
+        preferences: { level: 'beginner' },
       },
     });
     expect(serializedMessage).not.toContain("Explain Like I'm 5");
@@ -95,10 +95,12 @@ describe('generateApiExplanation', () => {
 function createSnapshot(): SelectionSnapshot {
   return {
     selectedText: 'selected text',
-    context: { containingBlock: 'A paragraph with selected text.' },
+    context: {
+      immediate: 'A paragraph with selected text.',
+      containingBlock: 'A paragraph with selected text.',
+    },
     page: {
       title: 'Article',
-      url: 'https://example.com/article',
       hostname: 'example.com',
       language: 'en',
     },

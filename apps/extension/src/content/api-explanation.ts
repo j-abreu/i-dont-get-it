@@ -16,9 +16,6 @@ export const generateApiExplanation: ExplanationProvider = async (snapshot, opti
     selection: snapshot,
     preferences: {
       level: options.level,
-      ...(snapshot.page.language === undefined
-        ? {}
-        : { responseLanguage: snapshot.page.language }),
     },
   };
   const message: ExplainRequestMessage = {

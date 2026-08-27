@@ -4,12 +4,12 @@ export const MAX_PAGE_TITLE_CHARACTERS = 500;
 
 export type PageMetadata = {
   title: string;
-  url: string;
   hostname: string;
   language?: string;
 };
 
 export type SelectionContext = {
+  immediate: string;
   heading?: string;
   containingBlock: string;
   before?: string;
@@ -107,6 +107,7 @@ export function applyContextMenuFallback(
     snapshot: {
       selectedText,
       context: {
+        immediate: truncateContextText(selectedText),
         containingBlock: truncateContextText(selectedText),
       },
       page: result.page,
@@ -169,6 +170,7 @@ function isSelectionContext(value: unknown): value is SelectionContext {
   const candidate = value as Partial<SelectionContext>;
 
   return (
+    typeof candidate.immediate === 'string' &&
     typeof candidate.containingBlock === 'string' &&
     isOptionalString(candidate.heading) &&
     isOptionalString(candidate.before) &&
@@ -185,7 +187,6 @@ function isPageMetadata(value: unknown): value is PageMetadata {
 
   return (
     typeof candidate.title === 'string' &&
-    typeof candidate.url === 'string' &&
     typeof candidate.hostname === 'string' &&
     isOptionalString(candidate.language)
   );

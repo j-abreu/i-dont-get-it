@@ -19,6 +19,7 @@ describe('OpenAI explanation provider', () => {
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         model: 'configured-model',
+        metadata: { prompt_version: '2026-08-27-v2' },
         reasoning: { effort: 'none' },
         store: false,
         text: {
@@ -117,10 +118,12 @@ function createRequest(): ExplainRequest {
     version: EXPLANATION_CONTRACT_VERSION,
     selection: {
       selectedText: 'contextual representation',
-      context: { containingBlock: 'A model learns a contextual representation.' },
+      context: {
+        immediate: 'A model learns a contextual representation.',
+        containingBlock: 'A model learns a contextual representation.',
+      },
       page: {
         title: 'Models',
-        url: 'https://example.com/models',
         hostname: 'example.com',
       },
     },

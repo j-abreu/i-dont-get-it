@@ -10,7 +10,6 @@ import {
 
 const PAGE = {
   title: 'Article',
-  url: 'https://example.com/article',
   hostname: 'example.com',
 };
 
@@ -22,7 +21,10 @@ describe('selection result helpers', () => {
         source: 'dom',
         snapshot: {
           selectedText: 'selected text',
-          context: { containingBlock: 'A paragraph with selected text.' },
+          context: {
+            immediate: 'A paragraph with selected text.',
+            containingBlock: 'A paragraph with selected text.',
+          },
           page: PAGE,
         },
       }),
@@ -64,7 +66,7 @@ describe('selection result helpers', () => {
       source: 'context-menu-fallback',
       snapshot: {
         selectedText: 'selected text',
-        context: { containingBlock: 'selected text' },
+        context: { immediate: 'selected text', containingBlock: 'selected text' },
         page: PAGE,
       },
     });

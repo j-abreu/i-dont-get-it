@@ -1,5 +1,6 @@
 import {
   createRejection,
+  MAX_CONTEXT_BLOCK_CHARACTERS,
   MAX_PAGE_TITLE_CHARACTERS,
   MAX_SELECTION_CHARACTERS,
   normalizeReadableText,
@@ -95,6 +96,8 @@ function captureTextControlSelection(
   }
 
   const heading = findNearestHeading(document, control);
+  const selectionStart = Math.min(start, end);
+  const selectionEnd = Math.max(start, end);
 
   return {
     status: 'captured',
@@ -102,33 +105,28 @@ function captureTextControlSelection(
     snapshot: {
       selectedText,
       context: {
+        immediate: extractImmediateContext(control.value, selectionStart, selectionEnd),
         ...(heading === undefined ? {} : { heading }),
-        containingBlock: truncateContextText(control.value),
+        containingBlock: truncateContextAroundSelection(
+          control.value,
+          selectionStart,
+          selectionEnd,
+        ),
       },
       page,
     },
   };
 }
 
-export function sanitizePageUrl(value: string): Pick<PageMetadata, 'url' | 'hostname'> {
+export function extractPageHostname(value: string): string {
   try {
-    const url = new URL(value);
-    url.username = '';
-    url.password = '';
-    url.search = '';
-    url.hash = '';
-
-    return {
-      url: url.toString(),
-      hostname: url.hostname,
-    };
+    return new URL(value).hostname;
   } catch {
-    return { url: '', hostname: '' };
+    return '';
   }
 }
 
 function extractPageMetadata(options: CaptureOptions): PageMetadata {
-  const location = sanitizePageUrl(options.pageUrl);
   const title = normalizeReadableText(options.document.title).slice(0, MAX_PAGE_TITLE_CHARACTERS);
   const language =
     normalizeReadableText(options.document.documentElement.lang) ||
@@ -137,7 +135,7 @@ function extractPageMetadata(options: CaptureOptions): PageMetadata {
 
   return {
     title,
-    ...location,
+    hostname: extractPageHostname(options.pageUrl),
     ...(language === undefined ? {} : { language }),
   };
 }
@@ -156,17 +154,113 @@ function extractSelectionContext(
   const lastIndex = startIndex < 0 ? -1 : Math.max(startIndex, endIndex < 0 ? startIndex : endIndex);
   const selectedBlocks =
     firstIndex < 0 ? [] : blocks.slice(firstIndex, lastIndex + 1).map((block) => block.textContent ?? '');
-  const containingBlock = truncateContextText(joinUniqueBlocks(selectedBlocks) || selectedText);
+  const isSingleBlock = startBlock !== null && startBlock === endBlock;
+  const blockText = isSingleBlock ? startBlock.textContent ?? '' : '';
+  const rangeOffsets = isSingleBlock ? getRangeOffsetsInBlock(document, range, startBlock) : undefined;
+  const containingBlock =
+    rangeOffsets === undefined
+      ? truncateContextText(joinUniqueBlocks(selectedBlocks) || selectedText)
+      : truncateContextAroundSelection(blockText, rangeOffsets.start, rangeOffsets.end);
+  const immediate =
+    rangeOffsets === undefined
+      ? truncateContextText(selectedText)
+      : extractImmediateContext(blockText, rangeOffsets.start, rangeOffsets.end);
   const heading = startBlock === null ? undefined : findNearestHeading(document, startBlock);
   const before = findAdjacentProse(blocks, firstIndex, -1);
   const after = findAdjacentProse(blocks, lastIndex, 1);
 
   return {
+    immediate,
     ...(heading === undefined ? {} : { heading }),
     containingBlock,
     ...(before === undefined ? {} : { before }),
     ...(after === undefined ? {} : { after }),
   };
+}
+
+function getRangeOffsetsInBlock(
+  document: Document,
+  range: Range,
+  block: Element,
+): { start: number; end: number } | undefined {
+  try {
+    const beforeStart = document.createRange();
+    beforeStart.selectNodeContents(block);
+    beforeStart.setEnd(range.startContainer, range.startOffset);
+    const beforeEnd = document.createRange();
+    beforeEnd.selectNodeContents(block);
+    beforeEnd.setEnd(range.endContainer, range.endOffset);
+
+    return {
+      start: beforeStart.toString().length,
+      end: beforeEnd.toString().length,
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+export function extractImmediateContext(value: string, selectionStart: number, selectionEnd: number): string {
+  const start = Math.max(0, Math.min(selectionStart, value.length));
+  const end = Math.max(start, Math.min(selectionEnd, value.length));
+  const sentenceBoundary = /[.!?。！？](?:["'”’)]|\[[^\]]+\])*(?:\s+|$)/g;
+  let sentenceStart = 0;
+  let sentenceEnd = value.length;
+
+  for (const match of value.matchAll(sentenceBoundary)) {
+    const boundaryStart = match.index;
+    const boundaryEnd = boundaryStart + match[0].length;
+
+    if (boundaryEnd <= start) {
+      sentenceStart = boundaryEnd;
+      continue;
+    }
+
+    if (boundaryStart >= end) {
+      sentenceEnd = boundaryEnd;
+      break;
+    }
+  }
+
+  return truncateContextAroundSelection(
+    value.slice(sentenceStart, sentenceEnd),
+    start - sentenceStart,
+    end - sentenceStart,
+  );
+}
+
+function truncateContextAroundSelection(value: string, selectionStart: number, selectionEnd: number): string {
+  const before = normalizeReadableText(value.slice(0, selectionStart));
+  const selected = normalizeReadableText(value.slice(selectionStart, selectionEnd));
+  const after = normalizeReadableText(value.slice(selectionEnd));
+  const complete = [before, selected, after].filter(Boolean).join(' ');
+
+  if (complete.length <= MAX_CONTEXT_BLOCK_CHARACTERS) {
+    return complete;
+  }
+
+  if (selected.length >= MAX_CONTEXT_BLOCK_CHARACTERS) {
+    return truncateContextText(selected);
+  }
+
+  const markerBudget = (before.length > 0 ? 1 : 0) + (after.length > 0 ? 1 : 0);
+  const separatorBudget = (before.length > 0 ? 1 : 0) + (after.length > 0 ? 1 : 0);
+  const surroundingBudget = Math.max(
+    0,
+    MAX_CONTEXT_BLOCK_CHARACTERS - selected.length - markerBudget - separatorBudget,
+  );
+  const beforeBudget = Math.min(before.length, Math.floor(surroundingBudget / 2));
+  const afterBudget = Math.min(after.length, surroundingBudget - beforeBudget);
+  const boundedBefore = before.slice(before.length - beforeBudget).trimStart();
+  const boundedAfter = after.slice(0, afterBudget).trimEnd();
+
+  return [
+    boundedBefore.length === 0 ? undefined : `${beforeBudget < before.length ? '…' : ''}${boundedBefore}`,
+    selected,
+    boundedAfter.length === 0 ? undefined : `${boundedAfter}${afterBudget < after.length ? '…' : ''}`,
+  ]
+    .filter((part): part is string => part !== undefined && part.length > 0)
+    .join(' ');
 }
 
 function findAdjacentProse(

@@ -9,8 +9,11 @@ describe('isExplainRequestMessage', () => {
       version: EXPLANATION_CONTRACT_VERSION,
       selection: {
         selectedText: 'selected text',
-        context: { containingBlock: 'Selected text in context.' },
-        page: { title: 'Article', url: '', hostname: '' },
+        context: {
+          immediate: 'Selected text in context.',
+          containingBlock: 'Selected text in context.',
+        },
+        page: { title: 'Article', hostname: '' },
       },
       preferences: { level: 'simple' },
     };

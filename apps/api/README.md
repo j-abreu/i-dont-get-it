@@ -29,11 +29,11 @@ Endpoints:
 - `GET /health`
 - `POST /explain`
 
-The version 2 success response is intentionally incompatible with the earlier plain-text response:
+The version 3 contract uses the same structured success response introduced in version 2, but its request now carries an exact immediate-context field, supports only `simple`, `beginner`, and `detailed`, and omits full page URLs:
 
 ```json
 {
-  "version": 2,
+  "version": 3,
   "requestId": "request-id",
   "explanation": {
     "definition": "What the selected passage is or means on its own.",

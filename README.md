@@ -107,7 +107,9 @@ The beginner action sends only the internal explanation level `beginner`; its us
 
 Development builds also log the full local snapshot—including selected text and nearby context—to make extraction behavior inspectable. Production builds log only a summary. The extension service worker sends the snapshot to the API origin selected for the build mode. Development uses the provider configured in `apps/api/.env`; deterministic mode remains the default. Production uses the deployed Cloudflare Worker and Workers AI.
 
-The shared model prompt keeps the selected passage as the subject of the answer. It derives the sentence containing the selection as immediate context and retains surrounding blocks only as secondary evidence. Both model providers request a JSON Schema response containing `definition`, `contextualMeaning`, and `synonyms`; the API validates that structure before the extension renders it.
+The contract supports three explanation levels: `simple`, `beginner`, and `detailed`. Guidance controls each prose field separately so beginner explanations can use more accessible language without being mistaken for merely shorter answers.
+
+The extension captures the sentence containing the exact DOM or text-control selection as immediate context and retains surrounding blocks only as secondary evidence. The shared model prompt keeps the selected passage as the subject, treats page content as untrusted data, and uses the page language only as a hint unless a future explicit user preference overrides it. Both model providers request a JSON Schema response containing `definition`, `contextualMeaning`, and `synonyms`; the API validates that structure before the extension renders it.
 
 If the API is stopped or unavailable, the card displays its existing error state and **Try again** control.
 
@@ -116,8 +118,10 @@ Current capture limits:
 - Selected text: 5,000 characters
 - Each surrounding context block: 2,000 characters
 - Page title: 500 characters
-- URL query parameters, fragments, and credentials are removed
+- Only the page hostname is retained; the full URL is not captured or sent
 - Textareas, text inputs, and contenteditable regions are supported; password inputs remain excluded
+
+The shared explanation package includes 60 synthetic evaluation cases spanning all three levels, selection types, multilingual passages, code and formulas, and adversarial page content. Run offline corpus checks with `pnpm --filter @i-dont-get-it/explanation-core eval`; live provider runs are opt-in and documented in `packages/explanation-core/evals/README.md`.
 
 ## Documentation
 
