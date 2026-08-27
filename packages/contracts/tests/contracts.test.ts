@@ -57,6 +57,7 @@ describe('explanation contracts', () => {
         requestId: 'request-1',
         explanation: {
           explanation: 'Its meaning in this passage.',
+          relatedTerms: [],
         },
       }),
     ).toBe(true);
@@ -71,17 +72,20 @@ describe('explanation contracts', () => {
   it('requires the exact structured explanation shape', () => {
     const valid = {
       explanation: 'Its meaning in this passage.',
+      relatedTerms: ['related concept'],
     };
 
     expect(isStructuredExplanation(valid)).toBe(true);
     expect(isStructuredExplanation({ ...valid, explanation: '' })).toBe(false);
+    expect(isStructuredExplanation({ ...valid, relatedTerms: Array(6).fill('term') })).toBe(false);
     expect(isStructuredExplanation({ ...valid, extra: 'not allowed' })).toBe(false);
     expect(isStructuredExplanation({ ...valid, explanation: 'x'.repeat(4_001) })).toBe(false);
     expect(STRUCTURED_EXPLANATION_JSON_SCHEMA).toMatchObject({
       additionalProperties: false,
-      required: ['explanation'],
+      required: ['explanation', 'relatedTerms'],
       properties: {
         explanation: { maxLength: 4_000 },
+        relatedTerms: { maxItems: 5 },
       },
     });
   });

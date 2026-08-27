@@ -7,7 +7,7 @@ The Worker exposes the same versioned endpoints:
 - `GET /health`
 - `POST /explain`
 
-Version 5 explanation requests use the shared contracts and prompt builder, carry exact immediate context without a full page URL, and support `simple`, `beginner`, and `detailed`. They run through the `AI` binding with `@cf/meta/llama-3.3-70b-instruct-fp8-fast` and are limited to 10 requests per minute per installation identifier or fallback client address. Workers AI JSON Schema mode returns one contextual `explanation` field, and the Worker validates its exact structure before returning it.
+Version 6 explanation requests use the shared contracts and prompt builder, carry exact immediate context without a full page URL, and support `simple`, `beginner`, and `detailed`. They run through the `AI` binding with `@cf/meta/llama-3.3-70b-instruct-fp8-fast` and are limited to 10 requests per minute per installation identifier or fallback client address. Workers AI JSON Schema mode returns one contextual `explanation` plus up to five `relatedTerms`, and the Worker validates the exact structure before returning it.
 
 ## Local checks
 

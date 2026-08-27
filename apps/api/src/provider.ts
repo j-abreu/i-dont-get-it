@@ -24,6 +24,7 @@ export const deterministicExplanationProvider: ExplanationProvider = {
 
     return {
       explanation: `In the context of ${subject}, the selected passage describes the role or idea expressed by the surrounding text.`,
+      relatedTerms: [],
     };
   },
 };

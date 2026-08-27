@@ -108,5 +108,5 @@ function createSnapshot(): SelectionSnapshot {
 }
 
 function structured(explanation: string) {
-  return { explanation };
+  return { explanation, relatedTerms: [] };
 }

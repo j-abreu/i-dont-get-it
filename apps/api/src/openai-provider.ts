@@ -27,7 +27,7 @@ export type ResponsesClient = {
         format: {
           type: 'json_schema';
           name: 'structured_explanation';
-          description: 'An explanation of the selected passage in the supplied context.';
+          description: 'An explanation of the selected passage in context, plus useful related terms.';
           strict: true;
           schema: typeof STRUCTURED_EXPLANATION_JSON_SCHEMA;
         };
@@ -77,7 +77,7 @@ export function createOpenAIExplanationProvider(
             format: {
               type: 'json_schema',
               name: 'structured_explanation',
-              description: 'An explanation of the selected passage in the supplied context.',
+              description: 'An explanation of the selected passage in context, plus useful related terms.',
               strict: true,
               schema: STRUCTURED_EXPLANATION_JSON_SCHEMA,
             },

@@ -26,6 +26,7 @@ describe('Cloudflare Worker API', () => {
     const provider: ExplanationProvider = {
       explain: vi.fn().mockResolvedValue({
         explanation: 'A Worker-generated contextual explanation.',
+        relatedTerms: [],
       }),
     };
     const response = await handleRequest(explainRequest(createRequest()), {
@@ -38,6 +39,7 @@ describe('Cloudflare Worker API', () => {
       version: EXPLANATION_CONTRACT_VERSION,
       explanation: {
         explanation: 'A Worker-generated contextual explanation.',
+        relatedTerms: [],
       },
     });
     expect(provider.explain).toHaveBeenCalledWith(createRequest());

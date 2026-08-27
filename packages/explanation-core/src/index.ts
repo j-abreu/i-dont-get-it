@@ -1,6 +1,6 @@
 import type { ExplainRequest, ExplanationLevel } from '@i-dont-get-it/contracts';
 
-export const EXPLANATION_PROMPT_VERSION = '2026-08-27-v5' as const;
+export const EXPLANATION_PROMPT_VERSION = '2026-08-27-v6' as const;
 
 export type ExplanationPrompt = {
   instructions: string;
@@ -51,6 +51,7 @@ Explain only the exact value in passage. Context is evidence for interpreting th
 
 - explanation explains what the exact selected passage means, refers to, qualifies, or contributes specifically in context.immediate.
 - Keep the selected passage as the subject. Explain its role in context rather than summarizing unrelated page content.
+- relatedTerms contains up to five concise alternate names, similar terms, or closely related concepts that would genuinely help the reader explore this passage. Return an empty array when none are useful. Do not repeat passage, use full sentences, or include a loose association.
 - A recognizable term or entity may be identified using stable general knowledge. If its identity or intended sense is uncertain, say so instead of guessing.
 - Use context.immediate first. Use the heading, containing block, and adjacent context only when they resolve meaning or ambiguity.
 

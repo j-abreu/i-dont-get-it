@@ -19,7 +19,7 @@ describe('OpenAI explanation provider', () => {
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         model: 'configured-model',
-        metadata: { prompt_version: '2026-08-27-v5' },
+        metadata: { prompt_version: '2026-08-27-v6' },
         reasoning: { effort: 'none' },
         store: false,
         text: {
@@ -29,7 +29,7 @@ describe('OpenAI explanation provider', () => {
             strict: true,
             schema: expect.objectContaining({
               additionalProperties: false,
-              required: ['explanation'],
+              required: ['explanation', 'relatedTerms'],
             }),
           }),
         },
@@ -110,7 +110,7 @@ function createProvider(create: ResponsesClient['responses']['create']) {
 }
 
 function structured(explanation: string) {
-  return { explanation };
+  return { explanation, relatedTerms: [] };
 }
 
 function createRequest(): ExplainRequest {

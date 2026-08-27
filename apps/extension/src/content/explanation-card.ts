@@ -378,6 +378,21 @@ function renderExplanation(
     ),
   );
 
+  if (explanation.relatedTerms.length > 0) {
+    const relatedTerms = card.ownerDocument.createElement('section');
+    relatedTerms.className = 'explanation-section related-terms';
+    const heading = card.ownerDocument.createElement('h3');
+    heading.textContent = 'Related terms';
+    const list = card.ownerDocument.createElement('ul');
+    for (const term of explanation.relatedTerms) {
+      const item = card.ownerDocument.createElement('li');
+      item.textContent = term;
+      list.append(item);
+    }
+    relatedTerms.append(heading, list);
+    content.append(relatedTerms);
+  }
+
   card.append(label, content);
 
   if (refinementControl !== undefined) {
@@ -651,6 +666,8 @@ function createStyles(document: Document): HTMLStyleElement {
     .explanation { color: #14161a; display: grid; font-size: 15px; gap: 12px; margin: 0; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.28); }
     .explanation-section h3 { color: rgba(27, 30, 36, 0.62); font-size: 11px; font-weight: 750; letter-spacing: 0.06em; margin: 0 0 3px; text-transform: uppercase; }
     .explanation-section p { margin: 0; }
+    .related-terms ul { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
+    .related-terms li { background: rgba(255, 255, 255, 0.34); border: 1px solid rgba(24, 27, 32, 0.14); border-radius: 999px; font-size: 13px; padding: 3px 8px; }
     .status { align-items: center; color: rgba(25, 28, 34, 0.7); display: flex; gap: 9px; min-height: 44px; }
     .spinner { animation: spin 0.8s linear infinite; border: 2px solid rgba(20, 23, 28, 0.16); border-radius: 50%; border-top-color: #181b20; height: 17px; width: 17px; }
     .error { background: rgba(255, 230, 226, 0.46); border: 1px solid rgba(126, 34, 27, 0.16); border-radius: 10px; color: #6e211a; padding: 12px; }

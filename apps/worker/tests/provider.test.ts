@@ -28,7 +28,7 @@ describe('Workers AI provider', () => {
           type: 'json_schema',
           json_schema: expect.objectContaining({
             additionalProperties: false,
-            required: ['explanation'],
+            required: ['explanation', 'relatedTerms'],
           }),
         }),
       }),
@@ -49,7 +49,7 @@ describe('Workers AI provider', () => {
   it('rejects empty output and maps quota failures', async () => {
     const emptyProvider = createWorkersAiExplanationProvider({
       run: vi.fn().mockResolvedValue({
-        response: { explanation: '' },
+        response: { explanation: '', relatedTerms: [] },
       }),
     } as WorkersAiBinding);
     const limitedProvider = createWorkersAiExplanationProvider({
@@ -107,5 +107,5 @@ function createRequest(
 }
 
 function structured(explanation: string) {
-  return { explanation };
+  return { explanation, relatedTerms: [] };
 }

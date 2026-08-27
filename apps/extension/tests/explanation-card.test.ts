@@ -20,7 +20,7 @@ describe('mountExplanationCard', () => {
 
   it('renders loading and success inside an isolated shadow root', async () => {
     const explain = vi.fn<ExplanationProvider>().mockResolvedValue(
-      structured('A contextual explanation.'),
+      structured('A contextual explanation.', ['load balancing', 'traffic distribution']),
     );
     const controller = mountExplanationCard({
       document,
@@ -38,6 +38,7 @@ describe('mountExplanationCard', () => {
 
     expect(shadow.querySelector('.definition')).toBeNull();
     expect(shadow.querySelector('.contextual-meaning p')?.textContent).toBe('A contextual explanation.');
+    expect(shadow.querySelector('.related-terms')?.textContent).toContain('load balancing');
     expect(shadow.querySelector('.brand')?.textContent).toBe('Now you get it!');
     expect(shadow.querySelector('.eyebrow')?.textContent).toBe('Simple explanation');
     expect(shadow.querySelector('.beginner-action')?.textContent).toBe("Explain Like I'm 5");
@@ -51,9 +52,9 @@ describe('mountExplanationCard', () => {
     const controller = mountExplanationCard({
       document,
       snapshot: createSnapshot(),
-      explain: vi.fn<ExplanationProvider>().mockResolvedValue({
-        explanation: 'The passage classifies algorithms into two groups.',
-      }),
+      explain: vi.fn<ExplanationProvider>().mockResolvedValue(
+        structured('The passage classifies algorithms into two groups.'),
+      ),
     });
 
     await controller.settled;
@@ -355,8 +356,8 @@ function createSnapshot(): SelectionSnapshot {
   };
 }
 
-function structured(explanation: string) {
-  return { explanation };
+function structured(explanation: string, relatedTerms: string[] = []) {
+  return { explanation, relatedTerms };
 }
 
 type TestAnchorRect = {

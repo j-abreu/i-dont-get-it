@@ -2,7 +2,7 @@
 
 The local API validates explanation requests and keeps model-provider credentials outside the browser extension.
 
-The API supports a deterministic provider for key-free development and an OpenAI Responses API provider for live explanations. Both use the same extension-facing contract. The OpenAI adapter requests strict Structured Outputs and validates the returned contextual `explanation` field before responding.
+The API supports a deterministic provider for key-free development and an OpenAI Responses API provider for live explanations. Both use the same extension-facing contract. The OpenAI adapter requests strict Structured Outputs and validates the returned contextual `explanation` and `relatedTerms` fields before responding.
 
 Copy `.env.example` to `.env`. Keep `EXPLANATION_PROVIDER=deterministic` for local boundary testing, or configure live explanations:
 
@@ -29,14 +29,15 @@ Endpoints:
 - `GET /health`
 - `POST /explain`
 
-The version 5 contract carries exact immediate context, supports only `simple`, `beginner`, and `detailed`, omits full page URLs, and returns one explanation grounded in that context:
+The version 6 contract carries exact immediate context, supports only `simple`, `beginner`, and `detailed`, omits full page URLs, and returns one explanation grounded in that context plus useful related terms:
 
 ```json
 {
-  "version": 5,
+  "version": 6,
   "requestId": "request-id",
   "explanation": {
-    "explanation": "What the selected passage means or does in the supplied passage."
+    "explanation": "What the selected passage means or does in the supplied passage.",
+    "relatedTerms": ["a related concept"]
   }
 }
 ```

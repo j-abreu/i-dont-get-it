@@ -22,6 +22,7 @@ describe('provider configuration', () => {
       }),
     ).resolves.toMatchObject({
       explanation: expect.any(String),
+      relatedTerms: [],
     });
   });
 

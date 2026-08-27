@@ -12,6 +12,7 @@ describe('requestExplanation', () => {
           requestId: 'request-1',
           explanation: {
             explanation: 'A response from the API.',
+            relatedTerms: [],
           },
         }),
         { status: 200, headers: { 'content-type': 'application/json' } },
@@ -26,6 +27,7 @@ describe('requestExplanation', () => {
     ).resolves.toMatchObject({
       explanation: {
         explanation: 'A response from the API.',
+        relatedTerms: [],
       },
     });
     expect(fetcher).toHaveBeenCalledWith(

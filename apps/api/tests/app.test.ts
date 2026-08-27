@@ -23,6 +23,7 @@ describe('API', () => {
     const provider: ExplanationProvider = {
       explain: vi.fn().mockResolvedValue({
         explanation: 'A server-generated contextual explanation.',
+        relatedTerms: [],
       }),
     };
     const app = track(buildApp({ provider }));
@@ -33,6 +34,7 @@ describe('API', () => {
       version: EXPLANATION_CONTRACT_VERSION,
       explanation: {
         explanation: 'A server-generated contextual explanation.',
+        relatedTerms: [],
       },
     });
     expect(provider.explain).toHaveBeenCalledWith(createRequest());

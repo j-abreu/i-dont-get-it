@@ -1,4 +1,4 @@
-export const EXPLANATION_CONTRACT_VERSION = 5 as const;
+export const EXPLANATION_CONTRACT_VERSION = 6 as const;
 
 export const EXPLANATION_LEVELS = ['simple', 'beginner', 'detailed'] as const;
 export type ExplanationLevel = (typeof EXPLANATION_LEVELS)[number];
@@ -36,6 +36,7 @@ export type ExplainSuccessResponse = {
 
 export type StructuredExplanation = {
   explanation: string;
+  relatedTerms: string[];
 };
 
 export const STRUCTURED_EXPLANATION_JSON_SCHEMA = {
@@ -49,8 +50,15 @@ export const STRUCTURED_EXPLANATION_JSON_SCHEMA = {
       description:
         'Explain what the exact selected passage means, refers to, qualifies, or contributes specifically in the immediate context. Keep the selected passage as the subject; do not summarize unrelated page content.',
     },
+    relatedTerms: {
+      type: 'array',
+      description:
+        'Up to five concise terms, alternate names, or closely related concepts that help the reader explore the selected passage. Return an empty array when no useful related terms exist. Do not repeat the exact selected passage or use full sentences.',
+      items: { type: 'string', minLength: 1, maxLength: 200 },
+      maxItems: 5,
+    },
   },
-  required: ['explanation'],
+  required: ['explanation', 'relatedTerms'],
 } as const;
 
 export const EXPLAIN_ERROR_CODES = [
@@ -81,6 +89,8 @@ const LIMITS = {
   language: 100,
   hostname: 253,
   explanation: 4_000,
+  relatedTerm: 200,
+  relatedTerms: 5,
   requestId: 200,
 } as const;
 
@@ -149,12 +159,15 @@ export function isExplainResponse(value: unknown): value is ExplainResponse {
 }
 
 export function isStructuredExplanation(value: unknown): value is StructuredExplanation {
-  if (!isRecord(value) || !hasExactlyKeys(value, ['explanation'])) {
+  if (!isRecord(value) || !hasExactlyKeys(value, ['explanation', 'relatedTerms'])) {
     return false;
   }
 
   return (
-    isBoundedString(value.explanation, 1, LIMITS.explanation)
+    isBoundedString(value.explanation, 1, LIMITS.explanation) &&
+    Array.isArray(value.relatedTerms) &&
+    value.relatedTerms.length <= LIMITS.relatedTerms &&
+    value.relatedTerms.every((term) => isBoundedString(term, 1, LIMITS.relatedTerm))
   );
 }
 

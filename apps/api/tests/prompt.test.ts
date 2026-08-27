@@ -41,6 +41,7 @@ describe('buildExplanationPrompt', () => {
 
     expect(prompt.instructions).toContain('selected passage as the subject');
     expect(prompt.instructions).toContain('context.immediate');
+    expect(prompt.instructions).toContain('relatedTerms contains up to five');
     expect(prompt.instructions).toContain('say so instead of guessing');
     expect(prompt.instructions).toContain('context.immediate first');
   });
@@ -86,7 +87,7 @@ describe('buildExplanationPrompt', () => {
     const prompt = buildExplanationPrompt(createRequest());
 
     expect(prompt.instructions.length).toBeLessThan(3_300);
-    expect(prompt.version).toBe('2026-08-27-v5');
+    expect(prompt.version).toBe('2026-08-27-v6');
   });
 });
 
