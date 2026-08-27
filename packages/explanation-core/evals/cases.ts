@@ -65,28 +65,28 @@ const SCENARIOS: Scenario[] = [
     'The application uses an API to request weather data from another service.', {
       language: 'English', synonyms: 'allowed', mustMentionAny: ['interface', 'communicat'],
     }),
-  scenario('dense-sentence', 'sentence',
-    'Although the trial met its primary endpoint, the small sample makes the result uncertain.',
-    'Although the trial met its primary endpoint, the small sample makes the result uncertain.', {
-      language: 'English', synonyms: 'forbidden', mustMentionAny: ['goal', 'uncertain', 'sample'],
+  scenario('load-balancer-classification', 'sentence',
+    'Load balancer algorithms can be categorized into two types — static and dynamic.',
+    'Load balancer algorithms can be categorized into two types — static and dynamic.', {
+      language: 'English', definition: 'forbidden', synonyms: 'forbidden', mustMentionAny: ['static', 'dynamic', 'categor'],
     }),
   scenario('causal-sentence', 'sentence',
     'Because demand rose faster than production, prices increased despite the subsidy.',
     'Because demand rose faster than production, prices increased despite the subsidy.', {
-      language: 'English', synonyms: 'forbidden', mustMentionAny: ['demand', 'production', 'price'],
+      language: 'English', definition: 'forbidden', synonyms: 'forbidden', mustMentionAny: ['demand', 'production', 'price'],
     }),
   scenario('paragraph-selection', 'paragraph',
     'The service stores copies near users. When the original server is busy, those copies can be delivered instead.',
     'The service stores copies near users. When the original server is busy, those copies can be delivered instead.', {
-      language: 'English', synonyms: 'forbidden', mustMentionAny: ['copies', 'server', 'faster'],
+      language: 'English', definition: 'forbidden', synonyms: 'forbidden', mustMentionAny: ['copies', 'server', 'faster'],
     }),
   scenario('pronoun-it', 'fragment', 'it',
     'The committee rejected the proposal because it lacked evidence.', {
-      language: 'English', synonyms: 'forbidden', mustMentionAny: ['proposal'],
+      language: 'English', definition: 'forbidden', synonyms: 'forbidden', mustMentionAny: ['proposal'],
     }),
   scenario('the-former', 'fragment', 'the former',
     'Both graphite and diamond contain carbon; the former is soft and conductive.', {
-      language: 'English', synonyms: 'forbidden', mustMentionAny: ['graphite'],
+      language: 'English', definition: 'forbidden', synonyms: 'forbidden', mustMentionAny: ['graphite'],
     }),
   scenario('event-loop', 'term', 'event loop',
     'JavaScript uses the event loop to schedule callbacks after the call stack is clear.', {
@@ -99,7 +99,7 @@ const SCENARIOS: Scenario[] = [
   scenario('portuguese-sentence', 'multilingual',
     'A medida pode aliviar o problema no curto prazo, mas não resolve sua causa.',
     'A medida pode aliviar o problema no curto prazo, mas não resolve sua causa.', {
-      language: 'Portuguese', synonyms: 'forbidden', mustMentionAny: ['tempor', 'causa', 'problema'],
+      language: 'Portuguese', definition: 'forbidden', synonyms: 'forbidden', mustMentionAny: ['tempor', 'causa', 'problema'],
     }, { languageHint: 'pt-BR' }),
   scenario('mixed-language-product', 'multilingual', 'graceful degradation',
     'O sistema usa graceful degradation para continuar funcionando quando um serviço falha.', {
@@ -139,6 +139,7 @@ function scenario(
   immediate: string,
   expectationOptions: {
     language: string;
+    definition?: EvaluationExpectations['definition'];
     synonyms: EvaluationExpectations['synonyms'];
     mustMentionAny?: string[];
     forbiddenPhrases?: string[];
@@ -155,6 +156,7 @@ function scenario(
     ...contextOptions,
     expectations: {
       expectedLanguage: expectationOptions.language,
+      definition: expectationOptions.definition ?? 'required',
       synonyms: expectationOptions.synonyms,
       ...(expectationOptions.mustMentionAny === undefined
         ? {}
@@ -196,4 +198,3 @@ function createCase(value: Scenario, level: ExplanationLevel): EvaluationCase {
     expectations: value.expectations,
   };
 }
-

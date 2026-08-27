@@ -1,6 +1,6 @@
 import type { ExplainRequest, ExplanationLevel } from '@i-dont-get-it/contracts';
 
-export const EXPLANATION_PROMPT_VERSION = '2026-08-27-v2' as const;
+export const EXPLANATION_PROMPT_VERSION = '2026-08-27-v3' as const;
 
 export type ExplanationPrompt = {
   instructions: string;
@@ -13,7 +13,7 @@ const LEVEL_GUIDANCE: Record<ExplanationLevel, { guidance: string; maxOutputToke
   simple: {
     guidance: [
       'Use plain language and ordinary vocabulary.',
-      'Keep definition and contextualMeaning to one or two clear sentences each.',
+      'When definition is present, keep it and contextualMeaning to one or two clear sentences each.',
       'Include only what the reader needs to understand the passage here.',
     ].join(' '),
     maxOutputTokens: 420,
@@ -22,7 +22,7 @@ const LEVEL_GUIDANCE: Record<ExplanationLevel, { guidance: string; maxOutputToke
     guidance: [
       'Assume the reader has no prior knowledge.',
       'Use common words and short sentences; explain unavoidable terminology immediately.',
-      'Keep definition and contextualMeaning to one to three short sentences each.',
+      'When definition is present, keep it and contextualMeaning to one to three short sentences each.',
       'Use one concrete example or analogy only when it makes the meaning easier to understand.',
       'Do not mention age or talk down to the reader.',
     ].join(' '),
@@ -49,7 +49,8 @@ Explain only the exact value in passage. Context is evidence for interpreting th
 
 # Success criteria
 
-- definition explains or identifies passage on its own. For a sentence or paragraph, it is a concise plain-language paraphrase.
+- definition explains or identifies passage on its own only when it has a stable standalone meaning, such as a term, named entity, idiom, formula, or short conceptual phrase.
+- Return definition as null, and synonyms as an empty array, for a complete claim, classification, relationship, sentence, paragraph, or fragment when a definition would merely paraphrase the selection, repeat it, or create a misleading artificial label. Do not turn a statement into a definition.
 - contextualMeaning explains what passage means, refers to, qualifies, or contributes specifically in context.immediate. It adds information rather than repeating definition.
 - synonyms contains only reliable substitutes, aliases, abbreviations, or alternate names for a term, short phrase, or named entity. Use an empty array for sentences, paragraphs, ambiguous fragments, or when no genuine alternative exists.
 - A recognizable term or entity may be identified using stable general knowledge. If its identity or intended sense is uncertain, say so instead of guessing.

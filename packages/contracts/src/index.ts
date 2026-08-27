@@ -1,4 +1,4 @@
-export const EXPLANATION_CONTRACT_VERSION = 3 as const;
+export const EXPLANATION_CONTRACT_VERSION = 4 as const;
 
 export const EXPLANATION_LEVELS = ['simple', 'beginner', 'detailed'] as const;
 export type ExplanationLevel = (typeof EXPLANATION_LEVELS)[number];
@@ -35,7 +35,7 @@ export type ExplainSuccessResponse = {
 };
 
 export type StructuredExplanation = {
-  definition: string;
+  definition: string | null;
   contextualMeaning: string;
   synonyms: string[];
 };
@@ -45,11 +45,10 @@ export const STRUCTURED_EXPLANATION_JSON_SCHEMA = {
   additionalProperties: false,
   properties: {
     definition: {
-      type: 'string',
-      minLength: 1,
+      type: ['string', 'null'],
       maxLength: 1_500,
       description:
-        'Explain or identify only the exact selected passage on its own. For a sentence or paragraph, provide a concise plain-language paraphrase. State uncertainty instead of guessing.',
+        'Explain or identify only the exact selected passage on its own when it has a stable standalone meaning. Return null for a complete claim, classification, relationship, or fragment where a definition would merely restate the selection or be misleading.',
     },
     contextualMeaning: {
       type: 'string',
@@ -173,10 +172,11 @@ export function isStructuredExplanation(value: unknown): value is StructuredExpl
   }
 
   return (
-    isBoundedString(value.definition, 1, LIMITS.definition) &&
+    (value.definition === null || isBoundedString(value.definition, 1, LIMITS.definition)) &&
     isBoundedString(value.contextualMeaning, 1, LIMITS.contextualMeaning) &&
     Array.isArray(value.synonyms) &&
     value.synonyms.length <= LIMITS.synonyms &&
+    (value.definition !== null || value.synonyms.length === 0) &&
     value.synonyms.every((synonym) => isBoundedString(synonym, 1, LIMITS.synonym))
   );
 }

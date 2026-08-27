@@ -369,8 +369,12 @@ function renderExplanation(
 
   const content = card.ownerDocument.createElement('div');
   content.className = 'explanation';
+  if (explanation.definition !== null) {
+    content.append(
+      createExplanationSection(card.ownerDocument, 'Definition', explanation.definition, 'definition'),
+    );
+  }
   content.append(
-    createExplanationSection(card.ownerDocument, 'Definition', explanation.definition, 'definition'),
     createExplanationSection(
       card.ownerDocument,
       'In this context',

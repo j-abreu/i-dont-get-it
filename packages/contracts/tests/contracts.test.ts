@@ -78,6 +78,8 @@ describe('explanation contracts', () => {
     };
 
     expect(isStructuredExplanation(valid)).toBe(true);
+    expect(isStructuredExplanation({ ...valid, definition: null, synonyms: [] })).toBe(true);
+    expect(isStructuredExplanation({ ...valid, definition: null })).toBe(false);
     expect(isStructuredExplanation({ ...valid, synonyms: undefined })).toBe(false);
     expect(isStructuredExplanation({ ...valid, extra: 'not allowed' })).toBe(false);
     expect(isStructuredExplanation({ ...valid, synonyms: Array(6).fill('alias') })).toBe(false);
@@ -87,7 +89,7 @@ describe('explanation contracts', () => {
       additionalProperties: false,
       required: ['definition', 'contextualMeaning', 'synonyms'],
       properties: {
-        definition: { maxLength: 1_500 },
+        definition: { type: ['string', 'null'], maxLength: 1_500 },
         contextualMeaning: { maxLength: 4_000 },
         synonyms: { maxItems: 5 },
       },

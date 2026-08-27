@@ -20,15 +20,24 @@ export function scoreResponse(
   }
 
   const { explanation } = response;
-  const prose = `${explanation.definition}\n${explanation.contextualMeaning}`.toLocaleLowerCase();
+  const prose = `${explanation.definition ?? ''}\n${explanation.contextualMeaning}`.toLocaleLowerCase();
   const forbiddenPhrases = evaluationCase.expectations.forbiddenPhrases ?? [];
   const mustMentionAny = evaluationCase.expectations.mustMentionAny ?? [];
 
   return [
     { name: 'successful structured response', passed: true },
     {
+      name: 'definition applicability',
+      passed:
+        evaluationCase.expectations.definition === 'required'
+          ? explanation.definition !== null
+          : explanation.definition === null && explanation.synonyms.length === 0,
+      detail: evaluationCase.expectations.definition,
+    },
+    {
       name: 'definition and context are not identical',
       passed:
+        explanation.definition === null ||
         explanation.definition.trim().toLocaleLowerCase() !==
         explanation.contextualMeaning.trim().toLocaleLowerCase(),
     },
@@ -52,4 +61,3 @@ export function scoreResponse(
     },
   ];
 }
-

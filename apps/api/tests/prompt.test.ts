@@ -36,12 +36,12 @@ describe('buildExplanationPrompt', () => {
     expect(detailed.maxOutputTokens).toBeGreaterThan(beginner.maxOutputTokens);
   });
 
-  it('defines conditional behavior for terms, entities, passages, and ambiguous fragments', () => {
+  it('defines conditional behavior for standalone concepts and claims without definitions', () => {
     const prompt = buildExplanationPrompt(createRequest());
 
-    expect(prompt.instructions).toContain('sentence or paragraph');
-    expect(prompt.instructions).toContain('term, short phrase, or named entity');
-    expect(prompt.instructions).toContain('ambiguous fragments');
+    expect(prompt.instructions).toContain('stable standalone meaning');
+    expect(prompt.instructions).toContain('Return definition as null');
+    expect(prompt.instructions).toContain('classification, relationship, sentence, paragraph, or fragment');
     expect(prompt.instructions).toContain('say so instead of guessing');
     expect(prompt.instructions).toContain('context.immediate first');
   });
@@ -87,7 +87,7 @@ describe('buildExplanationPrompt', () => {
     const prompt = buildExplanationPrompt(createRequest());
 
     expect(prompt.instructions.length).toBeLessThan(3_300);
-    expect(prompt.version).toBe('2026-08-27-v2');
+    expect(prompt.version).toBe('2026-08-27-v3');
   });
 });
 

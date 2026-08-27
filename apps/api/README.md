@@ -29,14 +29,14 @@ Endpoints:
 - `GET /health`
 - `POST /explain`
 
-The version 3 contract uses the same structured success response introduced in version 2, but its request now carries an exact immediate-context field, supports only `simple`, `beginner`, and `detailed`, and omits full page URLs:
+The version 4 contract carries exact immediate context, supports only `simple`, `beginner`, and `detailed`, omits full page URLs, and allows `definition` to be `null` when a standalone definition would only restate the selected claim:
 
 ```json
 {
-  "version": 3,
+  "version": 4,
   "requestId": "request-id",
   "explanation": {
-    "definition": "What the selected passage is or means on its own.",
+    "definition": null,
     "contextualMeaning": "What it means or does in the supplied passage.",
     "synonyms": []
   }

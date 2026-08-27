@@ -50,6 +50,25 @@ describe('mountExplanationCard', () => {
     expect(explain).toHaveBeenCalledWith(createSnapshot(), { level: 'simple' });
   });
 
+  it('omits the definition section when the selection has no standalone definition', async () => {
+    const controller = mountExplanationCard({
+      document,
+      snapshot: createSnapshot(),
+      explain: vi.fn<ExplanationProvider>().mockResolvedValue({
+        definition: null,
+        contextualMeaning: 'The passage classifies algorithms into two groups.',
+        synonyms: [],
+      }),
+    });
+
+    await controller.settled;
+
+    expect(controller.host.shadowRoot?.querySelector('.definition')).toBeNull();
+    expect(controller.host.shadowRoot?.querySelector('.contextual-meaning p')?.textContent).toBe(
+      'The passage classifies algorithms into two groups.',
+    );
+  });
+
   it('renders an error and retries with the same snapshot', async () => {
     const explain = vi
       .fn<ExplanationProvider>()
