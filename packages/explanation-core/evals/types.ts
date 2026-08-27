@@ -20,10 +20,8 @@ export type EvaluationCategory = (typeof EVALUATION_CATEGORIES)[number];
 
 export type EvaluationExpectations = {
   expectedLanguage: string;
-  definition: 'required' | 'forbidden';
   forbiddenPhrases?: string[];
   mustMentionAny?: string[];
-  synonyms: 'allowed' | 'forbidden';
   reviewFocus: string[];
 };
 

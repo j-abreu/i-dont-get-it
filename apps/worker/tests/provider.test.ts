@@ -10,7 +10,7 @@ import {
 
 describe('Workers AI provider', () => {
   it('sends trusted instructions and serialized page data as separate messages', async () => {
-    const explanation = structured('A standalone definition.', 'A contextual explanation.');
+    const explanation = structured('A contextual explanation.');
     const run = vi.fn().mockResolvedValue({ response: explanation });
     const provider = createWorkersAiExplanationProvider({ run });
 
@@ -28,7 +28,7 @@ describe('Workers AI provider', () => {
           type: 'json_schema',
           json_schema: expect.objectContaining({
             additionalProperties: false,
-            required: ['definition', 'contextualMeaning', 'synonyms'],
+            required: ['explanation'],
           }),
         }),
       }),
@@ -49,7 +49,7 @@ describe('Workers AI provider', () => {
   it('rejects empty output and maps quota failures', async () => {
     const emptyProvider = createWorkersAiExplanationProvider({
       run: vi.fn().mockResolvedValue({
-        response: { definition: '', contextualMeaning: '', synonyms: [] },
+        response: { explanation: '' },
       }),
     } as WorkersAiBinding);
     const limitedProvider = createWorkersAiExplanationProvider({
@@ -68,7 +68,7 @@ describe('Workers AI provider', () => {
 
   it('uses beginner guidance without exposing the UI button label', async () => {
     const run = vi.fn().mockResolvedValue({
-      response: structured('A very easy definition.', 'A very easy explanation.'),
+      response: structured('A very easy explanation.'),
     });
     const provider = createWorkersAiExplanationProvider({ run });
 
@@ -106,6 +106,6 @@ function createRequest(
   };
 }
 
-function structured(definition: string, contextualMeaning: string) {
-  return { definition, contextualMeaning, synonyms: [] };
+function structured(explanation: string) {
+  return { explanation };
 }

@@ -11,9 +11,7 @@ describe('requestExplanation', () => {
           version: EXPLANATION_CONTRACT_VERSION,
           requestId: 'request-1',
           explanation: {
-            definition: 'A response definition.',
-            contextualMeaning: 'A response from the API.',
-            synonyms: [],
+            explanation: 'A response from the API.',
           },
         }),
         { status: 200, headers: { 'content-type': 'application/json' } },
@@ -27,9 +25,7 @@ describe('requestExplanation', () => {
       }),
     ).resolves.toMatchObject({
       explanation: {
-        definition: 'A response definition.',
-        contextualMeaning: 'A response from the API.',
-        synonyms: [],
+        explanation: 'A response from the API.',
       },
     });
     expect(fetcher).toHaveBeenCalledWith(

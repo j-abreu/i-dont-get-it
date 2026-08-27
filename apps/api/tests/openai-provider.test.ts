@@ -9,7 +9,7 @@ import { ExplanationProviderError } from '../src/provider.js';
 
 describe('OpenAI explanation provider', () => {
   it('uses structured output and returns the validated explanation', async () => {
-    const explanation = structured('A model definition.', 'A model contextual meaning.');
+    const explanation = structured('A model contextual explanation.');
     const create = vi
       .fn<ResponsesClient['responses']['create']>()
       .mockResolvedValue({ output_text: JSON.stringify(explanation) });
@@ -19,7 +19,7 @@ describe('OpenAI explanation provider', () => {
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         model: 'configured-model',
-        metadata: { prompt_version: '2026-08-27-v4' },
+        metadata: { prompt_version: '2026-08-27-v5' },
         reasoning: { effort: 'none' },
         store: false,
         text: {
@@ -29,7 +29,7 @@ describe('OpenAI explanation provider', () => {
             strict: true,
             schema: expect.objectContaining({
               additionalProperties: false,
-              required: ['definition', 'contextualMeaning', 'synonyms'],
+              required: ['explanation'],
             }),
           }),
         },
@@ -48,7 +48,7 @@ describe('OpenAI explanation provider', () => {
     const create = vi
       .fn<ResponsesClient['responses']['create']>()
       .mockResolvedValue({
-        output_text: JSON.stringify(structured('A definition.', 'A concise explanation.')),
+        output_text: JSON.stringify(structured('A concise explanation.')),
       });
     const client: ResponsesClient = { responses: { create } };
     const provider = createOpenAIExplanationProvider({
@@ -109,8 +109,8 @@ function createProvider(create: ResponsesClient['responses']['create']) {
   });
 }
 
-function structured(definition: string, contextualMeaning: string) {
-  return { definition, contextualMeaning, synonyms: [] };
+function structured(explanation: string) {
+  return { explanation };
 }
 
 function createRequest(): ExplainRequest {

@@ -1,4 +1,4 @@
-export const EXPLANATION_CONTRACT_VERSION = 4 as const;
+export const EXPLANATION_CONTRACT_VERSION = 5 as const;
 
 export const EXPLANATION_LEVELS = ['simple', 'beginner', 'detailed'] as const;
 export type ExplanationLevel = (typeof EXPLANATION_LEVELS)[number];
@@ -35,37 +35,22 @@ export type ExplainSuccessResponse = {
 };
 
 export type StructuredExplanation = {
-  definition: string | null;
-  contextualMeaning: string;
-  synonyms: string[];
+  explanation: string;
 };
 
 export const STRUCTURED_EXPLANATION_JSON_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   properties: {
-    definition: {
-      type: ['string', 'null'],
-      maxLength: 1_500,
-      description:
-        'Use a string only for a standalone term, named entity, idiom, formula, or short conceptual phrase. MUST return null for every complete claim, classification, relationship, sentence, paragraph, or fragment, including a statement that could be paraphrased.',
-    },
-    contextualMeaning: {
+    explanation: {
       type: 'string',
       minLength: 1,
       maxLength: 4_000,
       description:
-        'Explain what the exact selected passage means, refers to, qualifies, or contributes specifically in the immediate context. Add information distinct from the definition.',
-    },
-    synonyms: {
-      type: 'array',
-      description:
-        'Up to five genuine substitutes, aliases, abbreviations, or alternate names for a term, short phrase, or named entity. Return an empty array for sentences, paragraphs, ambiguous fragments, and when no reliable alternative exists.',
-      items: { type: 'string', minLength: 1, maxLength: 200 },
-      maxItems: 5,
+        'Explain what the exact selected passage means, refers to, qualifies, or contributes specifically in the immediate context. Keep the selected passage as the subject; do not summarize unrelated page content.',
     },
   },
-  required: ['definition', 'contextualMeaning', 'synonyms'],
+  required: ['explanation'],
 } as const;
 
 export const EXPLAIN_ERROR_CODES = [
@@ -95,10 +80,7 @@ const LIMITS = {
   pageTitle: 500,
   language: 100,
   hostname: 253,
-  definition: 1_500,
-  contextualMeaning: 4_000,
-  synonym: 200,
-  synonyms: 5,
+  explanation: 4_000,
   requestId: 200,
 } as const;
 
@@ -167,17 +149,12 @@ export function isExplainResponse(value: unknown): value is ExplainResponse {
 }
 
 export function isStructuredExplanation(value: unknown): value is StructuredExplanation {
-  if (!isRecord(value) || !hasExactlyKeys(value, ['definition', 'contextualMeaning', 'synonyms'])) {
+  if (!isRecord(value) || !hasExactlyKeys(value, ['explanation'])) {
     return false;
   }
 
   return (
-    (value.definition === null || isBoundedString(value.definition, 1, LIMITS.definition)) &&
-    isBoundedString(value.contextualMeaning, 1, LIMITS.contextualMeaning) &&
-    Array.isArray(value.synonyms) &&
-    value.synonyms.length <= LIMITS.synonyms &&
-    (value.definition !== null || value.synonyms.length === 0) &&
-    value.synonyms.every((synonym) => isBoundedString(synonym, 1, LIMITS.synonym))
+    isBoundedString(value.explanation, 1, LIMITS.explanation)
   );
 }
 

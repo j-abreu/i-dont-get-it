@@ -21,9 +21,7 @@ describe('provider configuration', () => {
         preferences: { level: 'simple' },
       }),
     ).resolves.toMatchObject({
-      definition: expect.stringContaining('deterministic mode'),
-      contextualMeaning: expect.any(String),
-      synonyms: [],
+      explanation: expect.any(String),
     });
   });
 

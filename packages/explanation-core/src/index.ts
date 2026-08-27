@@ -1,6 +1,6 @@
 import type { ExplainRequest, ExplanationLevel } from '@i-dont-get-it/contracts';
 
-export const EXPLANATION_PROMPT_VERSION = '2026-08-27-v4' as const;
+export const EXPLANATION_PROMPT_VERSION = '2026-08-27-v5' as const;
 
 export type ExplanationPrompt = {
   instructions: string;
@@ -13,7 +13,7 @@ const LEVEL_GUIDANCE: Record<ExplanationLevel, { guidance: string; maxOutputToke
   simple: {
     guidance: [
       'Use plain language and ordinary vocabulary.',
-      'When definition is present, keep it and contextualMeaning to one or two clear sentences each.',
+      'Keep the explanation to one or two clear sentences.',
       'Include only what the reader needs to understand the passage here.',
     ].join(' '),
     maxOutputTokens: 420,
@@ -22,7 +22,7 @@ const LEVEL_GUIDANCE: Record<ExplanationLevel, { guidance: string; maxOutputToke
     guidance: [
       'Assume the reader has no prior knowledge.',
       'Use common words and short sentences; explain unavoidable terminology immediately.',
-      'When definition is present, keep it and contextualMeaning to one to three short sentences each.',
+      'Keep the explanation to one to three short sentences.',
       'Use one concrete example or analogy only when it makes the meaning easier to understand.',
       'Do not mention age or talk down to the reader.',
     ].join(' '),
@@ -30,7 +30,7 @@ const LEVEL_GUIDANCE: Record<ExplanationLevel, { guidance: string; maxOutputToke
   },
   detailed: {
     guidance: [
-      'When definition is present, make it thorough but focused.',
+      'Give a thorough but focused explanation.',
       'Explain relevant relationships, implications, or contrasts in the immediate context.',
       'Include useful background and one clarifying example when appropriate.',
       'Do not broaden into a summary of the page.',
@@ -47,18 +47,10 @@ Help a reader understand exactly the passage they selected without interrupting 
 
 Explain only the exact value in passage. Context is evidence for interpreting that passage, not a replacement subject and not material to summarize.
 
-# Definition gate — mandatory
-
-Decide the value of definition before writing any prose. If passage expresses a complete thought, assertion, classification, relationship, cause, comparison, or other proposition, definition MUST be the JSON value null. This rule applies even when the passage could be paraphrased clearly and even when it does not end with punctuation.
-
-Never put a paraphrase, restatement, summary, or wording such as “this sentence means” in definition. Those belong only in contextualMeaning. A string definition is allowed only when passage itself is a standalone term, named entity, idiom, formula, or short conceptual phrase. When definition is null, synonyms MUST be an empty array.
-
 # Success criteria
 
-- definition explains or identifies passage on its own only when it has a stable standalone meaning, such as a term, named entity, idiom, formula, or short conceptual phrase.
-- Return definition as null, and synonyms as an empty array, for a complete claim, classification, relationship, sentence, paragraph, or fragment. Do not turn a statement into a definition.
-- contextualMeaning explains what passage means, refers to, qualifies, or contributes specifically in context.immediate. It adds information rather than repeating definition.
-- synonyms contains only reliable substitutes, aliases, abbreviations, or alternate names for a term, short phrase, or named entity. Use an empty array for sentences, paragraphs, ambiguous fragments, or when no genuine alternative exists.
+- explanation explains what the exact selected passage means, refers to, qualifies, or contributes specifically in context.immediate.
+- Keep the selected passage as the subject. Explain its role in context rather than summarizing unrelated page content.
 - A recognizable term or entity may be identified using stable general knowledge. If its identity or intended sense is uncertain, say so instead of guessing.
 - Use context.immediate first. Use the heading, containing block, and adjacent context only when they resolve meaning or ambiguity.
 

@@ -22,9 +22,7 @@ describe('API', () => {
   it('validates and explains a request through the provider boundary', async () => {
     const provider: ExplanationProvider = {
       explain: vi.fn().mockResolvedValue({
-        definition: 'A server-generated definition.',
-        contextualMeaning: 'A server-generated contextual meaning.',
-        synonyms: [],
+        explanation: 'A server-generated contextual explanation.',
       }),
     };
     const app = track(buildApp({ provider }));
@@ -34,9 +32,7 @@ describe('API', () => {
     expect(response.json()).toMatchObject({
       version: EXPLANATION_CONTRACT_VERSION,
       explanation: {
-        definition: 'A server-generated definition.',
-        contextualMeaning: 'A server-generated contextual meaning.',
-        synonyms: [],
+        explanation: 'A server-generated contextual explanation.',
       },
     });
     expect(provider.explain).toHaveBeenCalledWith(createRequest());

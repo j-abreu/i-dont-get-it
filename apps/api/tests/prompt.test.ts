@@ -22,13 +22,13 @@ describe('buildExplanationPrompt', () => {
     });
   });
 
-  it('uses three field-specific explanation levels', () => {
+  it('uses three contextual explanation levels', () => {
     const simple = buildExplanationPrompt(createRequest('simple'));
     const beginner = buildExplanationPrompt(createRequest('beginner'));
     const detailed = buildExplanationPrompt(createRequest('detailed'));
 
-    expect(simple.instructions).toContain('one or two clear sentences each');
-    expect(beginner.instructions).toContain('one to three short sentences each');
+    expect(simple.instructions).toContain('one or two clear sentences');
+    expect(beginner.instructions).toContain('one to three short sentences');
     expect(beginner.instructions).toContain('no prior knowledge');
     expect(beginner.instructions).not.toContain("Explain Like I'm 5");
     expect(detailed.instructions).toContain('relationships, implications, or contrasts');
@@ -36,14 +36,11 @@ describe('buildExplanationPrompt', () => {
     expect(detailed.maxOutputTokens).toBeGreaterThan(beginner.maxOutputTokens);
   });
 
-  it('defines conditional behavior for standalone concepts and claims without definitions', () => {
+  it('keeps the selected passage as the subject of one contextual explanation', () => {
     const prompt = buildExplanationPrompt(createRequest());
 
-    expect(prompt.instructions).toContain('stable standalone meaning');
-    expect(prompt.instructions).toContain('definition MUST be the JSON value null');
-    expect(prompt.instructions).toContain('even when it does not end with punctuation');
-    expect(prompt.instructions).toContain('Return definition as null');
-    expect(prompt.instructions).toContain('classification, relationship, sentence, paragraph, or fragment');
+    expect(prompt.instructions).toContain('selected passage as the subject');
+    expect(prompt.instructions).toContain('context.immediate');
     expect(prompt.instructions).toContain('say so instead of guessing');
     expect(prompt.instructions).toContain('context.immediate first');
   });
@@ -89,7 +86,7 @@ describe('buildExplanationPrompt', () => {
     const prompt = buildExplanationPrompt(createRequest());
 
     expect(prompt.instructions.length).toBeLessThan(3_300);
-    expect(prompt.version).toBe('2026-08-27-v4');
+    expect(prompt.version).toBe('2026-08-27-v5');
   });
 });
 

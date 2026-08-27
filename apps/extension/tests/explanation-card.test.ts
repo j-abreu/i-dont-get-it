@@ -20,7 +20,7 @@ describe('mountExplanationCard', () => {
 
   it('renders loading and success inside an isolated shadow root', async () => {
     const explain = vi.fn<ExplanationProvider>().mockResolvedValue(
-      structured('A standalone definition.', 'A contextual explanation.', ['representation']),
+      structured('A contextual explanation.'),
     );
     const controller = mountExplanationCard({
       document,
@@ -36,11 +36,8 @@ describe('mountExplanationCard', () => {
 
     await controller.settled;
 
-    expect(shadow.querySelector('.definition p')?.textContent).toBe('A standalone definition.');
-    expect(shadow.querySelector('.contextual-meaning p')?.textContent).toBe(
-      'A contextual explanation.',
-    );
-    expect(shadow.querySelector('.synonyms')?.textContent).toContain('representation');
+    expect(shadow.querySelector('.definition')).toBeNull();
+    expect(shadow.querySelector('.contextual-meaning p')?.textContent).toBe('A contextual explanation.');
     expect(shadow.querySelector('.brand')?.textContent).toBe('Now you get it!');
     expect(shadow.querySelector('.eyebrow')?.textContent).toBe('Simple explanation');
     expect(shadow.querySelector('.beginner-action')?.textContent).toBe("Explain Like I'm 5");
@@ -50,20 +47,18 @@ describe('mountExplanationCard', () => {
     expect(explain).toHaveBeenCalledWith(createSnapshot(), { level: 'simple' });
   });
 
-  it('omits the definition section when the selection has no standalone definition', async () => {
+  it('renders only the contextual explanation section', async () => {
     const controller = mountExplanationCard({
       document,
       snapshot: createSnapshot(),
       explain: vi.fn<ExplanationProvider>().mockResolvedValue({
-        definition: null,
-        contextualMeaning: 'The passage classifies algorithms into two groups.',
-        synonyms: [],
+        explanation: 'The passage classifies algorithms into two groups.',
       }),
     });
 
     await controller.settled;
 
-    expect(controller.host.shadowRoot?.querySelector('.definition')).toBeNull();
+    expect(controller.host.shadowRoot?.querySelectorAll('.explanation-section')).toHaveLength(1);
     expect(controller.host.shadowRoot?.querySelector('.contextual-meaning p')?.textContent).toBe(
       'The passage classifies algorithms into two groups.',
     );
@@ -91,7 +86,7 @@ describe('mountExplanationCard', () => {
 
     expect(explain).toHaveBeenCalledTimes(2);
     expect(explain).toHaveBeenLastCalledWith(createSnapshot(), { level: 'simple' });
-    expect(shadow.querySelector('.definition p')?.textContent).toBe('Recovered explanation.');
+    expect(shadow.querySelector('.contextual-meaning p')?.textContent).toBe('Recovered explanation.');
   });
 
   it('replaces a simple explanation with a detailed explanation on request', async () => {
@@ -109,7 +104,7 @@ describe('mountExplanationCard', () => {
     action.click();
     action.click();
 
-    expect(shadow.querySelector('.definition p')?.textContent).toBe('Simple answer.');
+    expect(shadow.querySelector('.contextual-meaning p')?.textContent).toBe('Simple answer.');
     expect(shadow.querySelector<HTMLButtonElement>('.detail-action')?.disabled).toBe(true);
     expect(shadow.querySelector('.detail-action')?.textContent).toBe('Expanding…');
     expect(explain).toHaveBeenCalledTimes(2);
@@ -118,7 +113,7 @@ describe('mountExplanationCard', () => {
     detailed.resolve(structured('Detailed answer with more context.'));
     await waitForMicrotasks();
 
-    expect(shadow.querySelector('.definition p')?.textContent).toBe(
+    expect(shadow.querySelector('.contextual-meaning p')?.textContent).toBe(
       'Detailed answer with more context.',
     );
     expect(shadow.querySelector('.eyebrow')?.textContent).toBe('Detailed explanation');
@@ -147,7 +142,7 @@ describe('mountExplanationCard', () => {
     beginnerAction.click();
     detailedAction.click();
 
-    expect(shadow.querySelector('.definition p')?.textContent).toBe('Simple answer.');
+    expect(shadow.querySelector('.contextual-meaning p')?.textContent).toBe('Simple answer.');
     expect(shadow.querySelector<HTMLButtonElement>('.beginner-action')?.disabled).toBe(true);
     expect(shadow.querySelector<HTMLButtonElement>('.detail-action')?.disabled).toBe(true);
     expect(shadow.querySelector('.beginner-action')?.textContent).toBe('Simplifying…');
@@ -161,7 +156,7 @@ describe('mountExplanationCard', () => {
     beginner.resolve(structured('A very easy explanation.'));
     await waitForMicrotasks();
 
-    expect(shadow.querySelector('.definition p')?.textContent).toBe('A very easy explanation.');
+    expect(shadow.querySelector('.contextual-meaning p')?.textContent).toBe('A very easy explanation.');
     expect(shadow.querySelector('.eyebrow')?.textContent).toBe(
       'Beginner-friendly explanation',
     );
@@ -172,14 +167,14 @@ describe('mountExplanationCard', () => {
 
     shadow.querySelector<HTMLButtonElement>('.detail-action')!.click();
 
-    expect(shadow.querySelector('.definition p')?.textContent).toBe('A very easy explanation.');
+    expect(shadow.querySelector('.contextual-meaning p')?.textContent).toBe('A very easy explanation.');
     expect(shadow.querySelector('.detail-action')?.textContent).toBe('Expanding…');
     expect(explain).toHaveBeenLastCalledWith(snapshot, { level: 'detailed' });
 
     detailed.resolve(structured('A more complete explanation.'));
     await waitForMicrotasks();
 
-    expect(shadow.querySelector('.definition p')?.textContent).toBe(
+    expect(shadow.querySelector('.contextual-meaning p')?.textContent).toBe(
       'A more complete explanation.',
     );
     expect(shadow.querySelector('.eyebrow')?.textContent).toBe('Detailed explanation');
@@ -201,7 +196,7 @@ describe('mountExplanationCard', () => {
     shadow.querySelector<HTMLButtonElement>('.detail-action')!.click();
     await waitForMicrotasks();
 
-    expect(shadow.querySelector('.definition p')?.textContent).toBe('Simple answer stays visible.');
+    expect(shadow.querySelector('.contextual-meaning p')?.textContent).toBe('Simple answer stays visible.');
     expect(shadow.querySelector('[role="alert"]')?.textContent).toContain(
       'detailed explanation could not be prepared',
     );
@@ -210,7 +205,7 @@ describe('mountExplanationCard', () => {
     await waitForMicrotasks();
 
     expect(explain).toHaveBeenCalledTimes(3);
-    expect(shadow.querySelector('.definition p')?.textContent).toBe('Detailed answer after retry.');
+    expect(shadow.querySelector('.contextual-meaning p')?.textContent).toBe('Detailed answer after retry.');
     expect(shadow.querySelector('.eyebrow')?.textContent).toBe('Detailed explanation');
   });
 
@@ -234,7 +229,7 @@ describe('mountExplanationCard', () => {
     await waitForMicrotasks();
 
     expect(first.host.isConnected).toBe(false);
-    expect(second.host.shadowRoot?.querySelector('.definition p')?.textContent).toBe('New answer.');
+    expect(second.host.shadowRoot?.querySelector('.contextual-meaning p')?.textContent).toBe('New answer.');
   });
 
   it('replaces an existing card instead of duplicating the host', async () => {
@@ -360,12 +355,8 @@ function createSnapshot(): SelectionSnapshot {
   };
 }
 
-function structured(
-  definition: string,
-  contextualMeaning = 'Meaning in this context.',
-  synonyms: string[] = [],
-) {
-  return { definition, contextualMeaning, synonyms };
+function structured(explanation: string) {
+  return { explanation };
 }
 
 type TestAnchorRect = {
