@@ -1,5 +1,5 @@
 export const DEVELOPMENT_API_BASE_URL = 'http://127.0.0.1:8787';
-export const PRODUCTION_API_BASE_URL = 'https://i-dont-get-it-api.jere-lab.workers.dev';
+export const PRODUCTION_API_BASE_URL = 'https://context-explain-api.jere-lab.workers.dev';
 
 export function resolveApiBaseUrl(mode: string, configuredValue?: string): string {
   const apiBaseUrl = configuredValue?.trim();
