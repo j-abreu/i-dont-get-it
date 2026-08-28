@@ -1,4 +1,4 @@
-# i-dont-get-it
+# I don't get it
 
 <p align="center">
   <img src="apps/extension/public/icon/128.png" alt="i-dont-get-it teacher robot icon" width="128">
@@ -10,7 +10,7 @@ The initial product targets Chromium browsers and regular web pages. A user sele
 
 ## Status
 
-The first browser vertical slice and API boundary are complete. The Fastify API supports deterministic local responses and live model explanations through a server-side OpenAI Responses API adapter. Production extension builds use the deployed Cloudflare Worker and Workers AI. Version `1.0.0` introduces a breaking structured explanation contract.
+The first browser vertical slice and API boundary are complete. The Fastify API supports deterministic local responses and live model explanations through a server-side OpenAI Responses API adapter. Production extension builds use the deployed Cloudflare Worker and Workers AI. The current version 6 structured explanation contract returns a contextual explanation and optional related terms.
 
 ## Repository structure
 
