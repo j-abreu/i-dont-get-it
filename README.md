@@ -72,9 +72,7 @@ Then open `http://127.0.0.1:4173/`. The fixture includes article prose, inline a
 
 The development extension is generated in `apps/extension/.output/chrome-mv3-dev`. The production extension is generated in `apps/extension/.output/chrome-mv3`.
 
-Development extension builds call the local API at `http://127.0.0.1:8787`. Production builds call the deployed Cloudflare Worker at `https://context-explain-api.jere-lab.workers.dev`. WXT generates only the matching host permission for each mode. `WXT_API_BASE_URL` can override the origin; production builds reject HTTP, loopback, credential-bearing, or path-bearing overrides.
-
-The deployed Worker still needs an installation-credential flow before unrestricted public use. The current rate limiter falls back to the connecting address when no installation identifier is supplied; that is abuse friction, not authentication.
+Development extension builds call the local API at `http://127.0.0.1:8787`. Set `WXT_API_BASE_URL` to use another local development API origin.
 
 ## Current extension behavior
 
