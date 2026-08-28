@@ -2,14 +2,12 @@
 
 ## Project
 
-This pnpm workspace contains the source and developer-facing files for `i-dont-get-it`.
+This pnpm workspace contains the browser-extension source and developer-facing files for `i-dont-get-it`.
 
 - `apps/extension` contains the WXT browser extension.
-- `apps/api` contains the Fastify/OpenAI local and reference gateway.
-- `apps/worker` contains the separate Cloudflare Workers/Workers AI production target.
-- `packages` is reserved for code genuinely shared by multiple applications, such as API contracts.
+- `packages/contracts` is the browser client's checked-in protocol snapshot.
 
-Keep runtime-specific code inside its application. Do not import extension browser or DOM code into the API. Introduce a shared package only when at least two applications consume it.
+The shared Cloudflare Worker, provider implementation, canonical contracts, prompt construction, and evaluations live in `/Users/jeremias/Repositories/context-explain-api`. Do not add server or Worker code to this repository.
 
 ## Documentation boundary
 

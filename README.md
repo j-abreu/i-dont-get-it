@@ -4,24 +4,21 @@
   <img src="apps/extension/public/icon/128.png" alt="i-dont-get-it teacher robot icon" width="128">
 </p>
 
-A browser extension and supporting API that explain selected text using the context of the page the user is reading.
+A browser extension that explains selected text using the context of the page the user is reading.
 
 The initial product targets Chromium browsers and regular web pages. A user selects a term, sentence, or paragraph, invokes the extension, and receives a contextual explanation without leaving the page.
 
 ## Status
 
-The first browser vertical slice and API boundary are complete. The Fastify API supports deterministic local responses and live model explanations through a server-side OpenAI Responses API adapter. Production extension builds use the deployed Cloudflare Worker and Workers AI. The current version 6 structured explanation contract returns a contextual explanation and optional related terms.
+The first browser vertical slice and API boundary are complete. Production extension builds use the shared Cloudflare Worker and Workers AI. The current version 6 structured explanation contract returns a contextual explanation and optional related terms.
 
 ## Repository structure
 
 ```text
 apps/
-├── extension/  WXT browser extension
-├── api/        Fastify/OpenAI local and reference gateway
-└── worker/     Cloudflare Workers/Workers AI production target
+└── extension/  WXT browser extension
 packages/
-├── contracts/        Shared versioned request and response validation
-└── explanation-core/ Shared prompt construction and safety boundary
+└── contracts/  Browser client protocol snapshot
 ```
 
 ## Requirements
@@ -48,19 +45,7 @@ Start WXT's development mode:
 pnpm dev
 ```
 
-In a second terminal, start the local explanation API:
-
-```sh
-pnpm dev:api
-```
-
-To develop the separate Cloudflare target instead, authenticate Wrangler as described in `apps/worker/README.md`, then run:
-
-```sh
-pnpm dev:worker
-```
-
-The deterministic provider requires no credentials. For live explanations, copy `apps/api/.env.example` to `apps/api/.env`, set `EXPLANATION_PROVIDER=openai`, and provide `OPENAI_API_KEY`. The initial recommended model is `gpt-5-nano`. Credentials remain in the API process and are never bundled into the extension.
+The shared API and its local development instructions live in `/Users/jeremias/Repositories/context-explain-api`. Credentials remain in that API process and are never bundled into the extension.
 
 The root command starts the extension development server. It watches the extension source and produces a development build. Load it manually:
 
@@ -87,7 +72,7 @@ Then open `http://127.0.0.1:4173/`. The fixture includes article prose, inline a
 
 The development extension is generated in `apps/extension/.output/chrome-mv3-dev`. The production extension is generated in `apps/extension/.output/chrome-mv3`.
 
-Development extension builds call the local Fastify API at `http://127.0.0.1:8787`. Production builds call the deployed Cloudflare Worker at `https://i-dont-get-it-api.jere-lab.workers.dev`. WXT generates only the matching host permission for each mode. `WXT_API_BASE_URL` can override the origin; production builds reject HTTP, loopback, credential-bearing, or path-bearing overrides.
+Development extension builds call the local API at `http://127.0.0.1:8787`. Production builds call the deployed Cloudflare Worker at `https://i-dont-get-it-api.jere-lab.workers.dev`. WXT generates only the matching host permission for each mode. `WXT_API_BASE_URL` can override the origin; production builds reject HTTP, loopback, credential-bearing, or path-bearing overrides.
 
 The deployed Worker still needs an installation-credential flow before unrestricted public use. The current rate limiter falls back to the connecting address when no installation identifier is supplied; that is abuse friction, not authentication.
 
@@ -105,7 +90,7 @@ The explanation card supports loading, close, error, and retry states and includ
 
 The beginner action sends only the internal explanation level `beginner`; its user-facing button text is not included in the model prompt. Beginner guidance requests common words, short sentences, immediate explanations for unavoidable terminology, and a simple example or analogy when useful—without talking down to the reader or mentioning age.
 
-Development builds also log the full local snapshot—including selected text and nearby context—to make extraction behavior inspectable. Production builds log only a summary. The extension service worker sends the snapshot to the API origin selected for the build mode. Development uses the provider configured in `apps/api/.env`; deterministic mode remains the default. Production uses the deployed Cloudflare Worker and Workers AI.
+Development builds also log the full local snapshot—including selected text and nearby context—to make extraction behavior inspectable. Production builds log only a summary. The extension service worker sends the snapshot to the API origin selected for the build mode. The shared API owns provider configuration, and production uses its deployed Cloudflare Worker and Workers AI.
 
 The contract supports three explanation levels: `simple`, `beginner`, and `detailed`. Guidance controls each prose field separately so beginner explanations can use more accessible language without being mistaken for merely shorter answers.
 
@@ -121,7 +106,7 @@ Current capture limits:
 - Only the page hostname is retained; the full URL is not captured or sent
 - Textareas, text inputs, and contenteditable regions are supported; password inputs remain excluded
 
-The shared explanation package includes 60 synthetic evaluation cases spanning all three levels, selection types, multilingual passages, code and formulas, and adversarial page content. Run offline corpus checks with `pnpm --filter @i-dont-get-it/explanation-core eval`; live provider runs are opt-in and documented in `packages/explanation-core/evals/README.md`.
+The shared API repository contains the synthetic evaluation corpus, prompt construction, and live-provider evaluation instructions.
 
 ## Documentation
 
